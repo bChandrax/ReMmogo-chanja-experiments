@@ -1,0 +1,449 @@
+.dash {
+  display: flex;
+  height: 100vh;
+  min-height: 600px;
+  background: #f5f4ef;
+  font-size: 13px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* ---- Sidebar ---- */
+.sidebar {
+  width: 160px;
+  flex-shrink: 0;
+  background: #fff;
+  border-right: 0.5px solid #e0ddd5;
+  display: flex;
+  flex-direction: column;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 14px;
+  border-bottom: 0.5px solid #e0ddd5;
+}
+
+.logoIcon {
+  width: 28px;
+  height: 28px;
+  background: #2c3e1f;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.logoText {
+  font-size: 13px;
+  font-weight: 500;
+  color: #1a1a18;
+}
+
+.logoK {
+  margin-left: auto;
+  font-size: 11px;
+  color: #888;
+  background: #f5f4ef;
+  border-radius: 4px;
+  padding: 1px 5px;
+}
+
+.nav {
+  flex: 1;
+  padding: 12px 0;
+}
+
+.navItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  font-size: 12px;
+  color: #666;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.navItem:hover {
+  background: #f5f4ef;
+}
+
+.navItemActive {
+  background: #2c3e1f;
+  color: #fff;
+  border-radius: 0 20px 20px 0;
+  margin-right: 12px;
+}
+
+.navItemActive:hover {
+  background: #2c3e1f;
+}
+
+.navDivider {
+  border-top: 0.5px solid #e0ddd5;
+  margin: 8px 0;
+}
+
+.sidebarBottom {
+  padding: 12px 14px;
+  border-top: 0.5px solid #e0ddd5;
+}
+
+.userRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.userAvatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #c8d9b0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 500;
+  color: #3b5e1a;
+  flex-shrink: 0;
+}
+
+.userInfo p {
+  font-size: 11px;
+  color: #1a1a18;
+  font-weight: 500;
+}
+
+.userInfo span {
+  font-size: 10px;
+  color: #888;
+}
+
+/* ---- Main ---- */
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Topbar */
+.topbar {
+  background: #fff;
+  border-bottom: 0.5px solid #e0ddd5;
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.topbarLeft {
+  flex: 1;
+}
+
+.topbarLeft h1 {
+  font-size: 15px;
+  font-weight: 500;
+  color: #1a1a18;
+}
+
+.topbarLeft p {
+  font-size: 11px;
+  color: #888;
+  margin-top: 2px;
+}
+
+.searchBox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 0.5px solid #e0ddd5;
+  border-radius: 20px;
+  padding: 5px 12px;
+  font-size: 11px;
+  color: #888;
+  background: #f5f4ef;
+  width: 180px;
+}
+
+.btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border: 0.5px solid #e0ddd5;
+  border-radius: 20px;
+  font-size: 11px;
+  color: #1a1a18;
+  background: #fff;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn:hover {
+  background: #f5f4ef;
+}
+
+/* Content grid */
+.content {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto auto;
+  overflow-y: auto;
+}
+
+/* Panel (card) */
+.panel {
+  background: #fff;
+  border: 0.5px solid #e0ddd5;
+  margin: 10px;
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.panelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.panelTitle {
+  font-size: 13px;
+  font-weight: 500;
+  color: #1a1a18;
+}
+
+.seeAll {
+  font-size: 11px;
+  color: #888;
+  cursor: pointer;
+}
+
+/* ---- Bills & Payments ---- */
+.billsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.billCard {
+  background: #f5f4ef;
+  border-radius: 8px;
+  padding: 10px 12px;
+  border: 0.5px solid #e0ddd5;
+}
+
+.billIcon {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  margin-bottom: 6px;
+}
+
+.billLabel {
+  font-size: 10px;
+  color: #888;
+  margin-bottom: 3px;
+}
+
+.billAmount {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1a1a18;
+}
+
+.billChange {
+  font-size: 10px;
+  color: #3b6d11;
+  margin-top: 3px;
+}
+
+/* ---- Budget Health ---- */
+.budgetLegend {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  color: #888;
+}
+
+.legendDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.gaugeWrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  height: 130px;
+}
+
+.gaugeLabel {
+  position: absolute;
+  bottom: 10px;
+  text-align: center;
+}
+
+.gaugeAvail {
+  font-size: 9px;
+  color: #888;
+}
+
+.gaugeAmount {
+  font-size: 16px;
+  font-weight: 500;
+  color: #1a1a18;
+}
+
+.gaugeDaily {
+  font-size: 10px;
+  color: #888;
+}
+
+/* ---- Spending Allocation ---- */
+.allocTotal {
+  font-size: 10px;
+  color: #888;
+}
+
+.allocAmount {
+  font-size: 18px;
+  font-weight: 500;
+  color: #1a1a18;
+}
+
+.allocChange {
+  font-size: 10px;
+  color: #3b6d11;
+  margin-left: 6px;
+}
+
+.allocBar {
+  display: flex;
+  border-radius: 6px;
+  overflow: hidden;
+  height: 8px;
+  margin: 8px 0 10px;
+}
+
+.barSeg1 { flex: 0.55; background: #2c3e1f; }
+.barSeg2 { flex: 0.27; background: #9db88a; }
+.barSeg3 { flex: 0.18; background: #d5dece; }
+
+.barLegend {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.barLegItem {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: #888;
+}
+
+.allocTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.allocTable tr {
+  border-top: 0.5px solid #e0ddd5;
+}
+
+.allocTable td {
+  padding: 6px 0;
+  font-size: 11px;
+  color: #888;
+}
+
+.allocTable td:nth-child(2) {
+  text-align: center;
+}
+
+.allocTable td:last-child {
+  text-align: right;
+  font-weight: 500;
+  color: #1a1a18;
+}
+
+/* ---- Recent Transactions ---- */
+.txnHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.txnSince {
+  font-size: 10px;
+  color: #888;
+}
+
+.txnRow {
+  display: flex;
+  align-items: center;
+  padding: 7px 0;
+  border-bottom: 0.5px solid #e0ddd5;
+}
+
+.txnRow:last-child {
+  border-bottom: none;
+}
+
+.txnIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  margin-right: 10px;
+  flex-shrink: 0;
+}
+
+.txnInfo {
+  flex: 1;
+}
+
+.txnName {
+  font-size: 12px;
+  font-weight: 500;
+  color: #1a1a18;
+}
+
+.txnCat {
+  font-size: 10px;
+  color: #888;
+}
+
+.txnRight {
+  text-align: right;
+}
+
+.txnAmount {
+  font-size: 12px;
+  font-weight: 500;
+  color: #1a1a18;
+}
+
+.txnDate {
+  font-size: 10px;
+  color: #888;
+}

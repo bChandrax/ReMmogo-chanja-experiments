@@ -1,0 +1,77 @@
+.navbar {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+
+  width: 90%;
+  padding: 12px 20px;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  border-radius: 25px;
+
+  /* LIQUID GLASS */
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+
+  border: 1px solid rgba(255,255,255,0.2);
+
+  box-shadow:
+    0 8px 32px rgba(0,0,0,0.2),
+    inset 0 1px rgba(255,255,255,0.3);
+
+  transition: all 0.4s ease;
+}
+
+.nav-links {
+  display: flex;
+  gap: 20px;
+}
+
+.nav-links span {
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.nav-links span:hover {
+  color: #2ecc71;
+}
+
+/* 🔥 DYNAMIC ISLAND */
+.island {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  padding: 8px 16px;
+  border-radius: 999px;
+
+  background: rgba(0,0,0,0.8);
+  color: white;
+
+  transition: all 0.4s ease;
+}
+
+.island:hover {
+  padding: 8px 25px;
+  transform: scale(1.05);
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  background: #2ecc71;
+  border-radius: 50%;
+
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.4; }
+  50% { opacity: 1; }
+  100% { opacity: 0.4; }
+}
