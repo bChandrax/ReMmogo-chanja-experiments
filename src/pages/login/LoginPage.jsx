@@ -99,7 +99,7 @@ export default function LoginPage() {
                 FinanceUs
               </div>
 
-              <h1 className="login-heading">Holla,<br />Welcome Back</h1>
+              <h1 className="login-heading">Hello,<br />Welcome Back</h1>
               <p className="login-subtitle">Hey, welcome back to your special place</p>
 
               <form onSubmit={handleSignIn}>
