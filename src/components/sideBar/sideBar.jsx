@@ -17,14 +17,14 @@ export default function SideBar() {
       </div>
 
       <nav className="nav">
-        <Link to="/pdash"         className={`nav-item ${location.pathname === "/dashboard"         ? "nav-item-active" : ""}`}>Dashboard</Link>
+        <Link to="/pdash"            className={`nav-item ${location.pathname === "/dashboard"         ? "nav-item-active" : ""}`}>Dashboard</Link>
         <Link to="/exploreGroups"    className={`nav-item ${location.pathname === "/explore-groups"    ? "nav-item-active" : ""}`}>Explore Groups</Link>
         <Link to="/myGroups"         className={`nav-item ${location.pathname === "/my-groups"         ? "nav-item-active" : ""}`}>My Groups</Link>
         <Link to="/myContributions"  className={`nav-item ${location.pathname === "/my-contributions"  ? "nav-item-active" : ""}`}>My Contributions</Link>
         <Link to="/myLoans"          className={`nav-item ${location.pathname === "/my-loans"          ? "nav-item-active" : ""}`}>My Loans</Link>
         <Link to="/paymentProofs"    className={`nav-item ${location.pathname === "/payment-proofs"    ? "nav-item-active" : ""}`}>Payment Proofs</Link>
         <Link to="/myStatements"     className={`nav-item ${location.pathname === "/my-statements"     ? "nav-item-active" : ""}`}>My Statements</Link>
-        <Link to="/notifications"     className={`nav-item ${location.pathname === "/notifications"     ? "nav-item-active" : ""}`}>Notifications</Link>
+        <Link to="/notifications"    className={`nav-item ${location.pathname === "/notifications"     ? "nav-item-active" : ""}`}>Notifications</Link>
 
         <div className="nav-divider" />
 
