@@ -1,11 +1,16 @@
+import { lazy } from "react";
 import { useState } from "react";
+import { Handshake } from "lucide-react";
 
 const NAV_ITEMS = [
   { label: "Dashboard" },
-  { label: "Transactions" },
-  { label: "Invoices & Bills" },
-  { label: "Investments" },
-  { label: "Reports" },
+  { label: "Explore Groups" },
+  { label: "My Groups" },
+  { label: "My Contributions"},
+  { label: "My Loans" },
+  { label: "Payment Proofs" },
+  { label: "My Statements" },
+  { label: "Notifications" },
 ];
 
 const BOTTOM_NAV = ["History", "Support", "Settings"];
@@ -17,8 +22,10 @@ export default function SideBar() {
     <aside className="sidebar">
 
       <div className="logo">
-        <div className="logo-icon">F</div>
-        <span className="logo-text">FinanceUs</span>
+        <div className="logo-icon">
+          <Handshake size={18} />
+        </div>
+        <span className="logo-text">ReMmogo</span>
         <span className="logo-k">K</span>
       </div>
 
