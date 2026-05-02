@@ -1,0 +1,15 @@
+.GroupCard{
+    aspect-ratio: 1/1;
+    border: 1px solid black;
+    width: 20vw;
+    margin-left: 5px;
+}
+
+.thumbnail{
+    background-color: green;
+}
+
+.GroupCard-body{
+    font-size: 12px;
+    color: grey;
+}

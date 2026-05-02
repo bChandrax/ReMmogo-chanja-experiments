@@ -1,6 +1,7 @@
 import { useState, lazy } from "react";
 import SideBar from "../../components/sideBar/sideBar";
 import "../../pages/personal-dashboard/PersonalDashboard.css"
+import DashboardNavBar from "../../components/NavBar/DashboardNavBar";
 
 export const BILL_CARDS = [
   { label: "Total Contributions This Year", amount: "+$12,480.00", change: "6.4%", iconBg: "#2c3e1f" },
@@ -30,16 +31,7 @@ export default function PersonalDashboard() {
 
       <div className="main">
 
-        <div className="topbar">
-          <div className="topbar-left">
-            <h1>Welcome back, Aarav</h1>
-            <p>Here's a real-time snapshot of your financial health across accounts and obligations</p>
-          </div>
-          <div className="search-box">🔍 Search </div>
-          <button className="btn">Create Group</button>
-          <button className="btn">Add Member</button>
-          <button className="btn">Record payment</button>
-        </div>
+        <DashboardNavBar />
 
         <div className="content">
 

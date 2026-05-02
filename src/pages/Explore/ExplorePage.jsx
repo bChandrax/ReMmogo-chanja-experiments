@@ -1,14 +1,14 @@
 import { useState, lazy } from "react";
 import SideBar from "../../components/sideBar/sideBar";
-import './myGroups.css';
+import './ExplorePage.css'; 
 import DashboardNavBar from "../../components/NavBar/DashboardNavBar";
 import GroupCard from "../../components/GroupCard/GroupCard";
 
-export default function MyGroups() {
+export default function ExplorePage() {
   return (
     <div className="dash">
       <SideBar />
-
+    
       <div className="main">
         <DashboardNavBar />
         <div className="content">
@@ -20,7 +20,6 @@ export default function MyGroups() {
             <GroupCard />
           </div>
         </div>
-        
       </div>
     </div>
   );
