@@ -91,25 +91,20 @@ export default function PersonalDashboard() {
 
           {/* Spending Allocation */}
           <div className="panel">
-            
             <div className="panel-header">
               <span className="panel-title">My Loan Section</span>
               <span className="see-all">See All ›</span>
             </div>
-
             <div className="alloc-total">Total Budget</div>
-
             <div>
               <span className="alloc-amount">$14,200.00</span>
               <span className="alloc-change">↑ 4.2% vs last month</span>
             </div>
-
             <div className="alloc-bar">
               <div className="bar-seg1" />
               <div className="bar-seg2" />
               <div className="bar-seg3" />
             </div>
-
             <div className="bar-legend">
               {[["#2c3e1f", "Spent So Far"], ["#9db88a", "Upcoming Commitments"], ["#d5dece", "Still Available"]].map(([color, label]) => (
                 <div key={label} className="bar-leg-item">
@@ -118,7 +113,6 @@ export default function PersonalDashboard() {
                 </div>
               ))}
             </div>
-
             <table className="alloc-table">
               <tbody>
                 {ALLOC_ROWS.map((row) => (
@@ -130,12 +124,10 @@ export default function PersonalDashboard() {
                 ))}
               </tbody>
             </table>
-
           </div>
 
           {/* Recent Transactions */}
           <div className="panel">
-
             <div className="txn-header">
               <span className="panel-title">My Activity</span>
               <div style={{ textAlign: "right" }}>
@@ -143,7 +135,6 @@ export default function PersonalDashboard() {
                 <span className="txn-since"> Since Monday</span>
               </div>
             </div>
-
             {TRANSACTIONS.map((t) => (
               <div key={t.name} className="txn-row">
                 <div className="txn-icon" style={{ background: t.iconBg }} />
@@ -157,7 +148,6 @@ export default function PersonalDashboard() {
                 </div>
               </div>
             ))}
-
           </div>
 
         </div>
