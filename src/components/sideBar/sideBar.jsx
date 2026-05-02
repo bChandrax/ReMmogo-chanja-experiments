@@ -1,22 +1,9 @@
-import { lazy } from "react";
 import { useState } from "react";
 import { Handshake } from "lucide-react";
-
-const NAV_ITEMS = [
-  { label: "Dashboard" },
-  { label: "Explore Groups" },
-  { label: "My Groups" },
-  { label: "My Contributions"},
-  { label: "My Loans" },
-  { label: "Payment Proofs" },
-  { label: "My Statements" },
-  { label: "Notifications" },
-];
-
-const BOTTOM_NAV = ["History", "Support", "Settings"];
+import { Link, useLocation } from "react-router-dom";
 
 export default function SideBar() {
-  const [activeNav, setActiveNav] = useState("Dashboard");
+  const location = useLocation();
 
   return (
     <aside className="sidebar">
@@ -30,23 +17,21 @@ export default function SideBar() {
       </div>
 
       <nav className="nav">
-        {NAV_ITEMS.map(({ label }) => (
-          <div
-            key={label}
-            className={`nav-item ${activeNav === label ? "nav-item-active" : ""}`}
-            onClick={() => setActiveNav(label)}
-          >
-            {label}
-          </div>
-        ))}
+        <Link to="/pdash"         className={`nav-item ${location.pathname === "/dashboard"         ? "nav-item-active" : ""}`}>Dashboard</Link>
+        <Link to="/exploreGroups"    className={`nav-item ${location.pathname === "/explore-groups"    ? "nav-item-active" : ""}`}>Explore Groups</Link>
+        <Link to="/myGroups"         className={`nav-item ${location.pathname === "/my-groups"         ? "nav-item-active" : ""}`}>My Groups</Link>
+        <Link to="/myContributions"  className={`nav-item ${location.pathname === "/my-contributions"  ? "nav-item-active" : ""}`}>My Contributions</Link>
+        <Link to="/myLoans"          className={`nav-item ${location.pathname === "/my-loans"          ? "nav-item-active" : ""}`}>My Loans</Link>
+        <Link to="/paymentProofs"    className={`nav-item ${location.pathname === "/payment-proofs"    ? "nav-item-active" : ""}`}>Payment Proofs</Link>
+        <Link to="/myStatements"     className={`nav-item ${location.pathname === "/my-statements"     ? "nav-item-active" : ""}`}>My Statements</Link>
+        <Link to="/notifications"     className={`nav-item ${location.pathname === "/notifications"     ? "nav-item-active" : ""}`}>Notifications</Link>
 
         <div className="nav-divider" />
 
-        {BOTTOM_NAV.map((label) => (
-          <div key={label} className="nav-item">
-            {label}
-          </div>
-        ))}
+        <Link to="/history"  className="nav-item">History</Link>
+        <Link to="/support"  className="nav-item">Support</Link>
+        <Link to="/settings" className="nav-item">Settings</Link>
+
       </nav>
 
       <div className="sidebar-bottom">
