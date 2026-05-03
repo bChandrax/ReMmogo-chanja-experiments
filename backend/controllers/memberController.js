@@ -1,4 +1,4 @@
-const { sql } = require("../config/db");
+const { db } = require("../config/db");
 
 // ENROLL MEMBER INTO GROUP
 exports.enrollMember = async (req, res) => {
@@ -13,43 +13,40 @@ exports.enrollMember = async (req, res) => {
   }
 
   try {
-    // Check user exists
-    const userCheck = await sql.query`SELECT UserID FROM Users WHERE UserID = ${userId} AND IsActive = 1`;
-    if (userCheck.recordset.length === 0) return res.status(404).json({ error: "User not found" });
+    const userCheck = await db.query("SELECT userid FROM users WHERE userid = $1 AND isactive = true", [userId]);
+    if (userCheck.rows.length === 0) return res.status(404).json({ error: "User not found" });
 
-    // Check not already a member
-    const existingMember = await sql.query`
-      SELECT MemberID FROM GroupMembers WHERE GroupID = ${groupId} AND UserID = ${userId}
-    `;
-    if (existingMember.recordset.length > 0) {
+    const existingMember = await db.query(
+      "SELECT memberid FROM groupmembers WHERE groupid = $1 AND userid = $2",
+      [groupId, userId]
+    );
+    if (existingMember.rows.length > 0) {
       return res.status(400).json({ error: "User is already a member of this group" });
     }
 
-    // If signatory, check max 2
     if (memberRole === "signatory") {
-      const sigCount = await sql.query`
-        SELECT COUNT(*) AS cnt FROM GroupMembers
-        WHERE GroupID = ${groupId} AND Role = 'signatory' AND IsActive = 1
-      `;
-      if (sigCount.recordset[0].cnt >= 2) {
+      const sigCount = await db.query(
+        "SELECT COUNT(*) AS cnt FROM groupmembers WHERE groupid = $1 AND role = 'signatory' AND isactive = true",
+        [groupId]
+      );
+      if (parseInt(sigCount.rows[0].cnt) >= 2) {
         return res.status(400).json({ error: "Group already has 2 signatories" });
       }
     }
 
-    const result = await sql.query`
-      INSERT INTO GroupMembers (GroupID, UserID, Role, JoinDate)
-      OUTPUT INSERTED.*
-      VALUES (${groupId}, ${userId}, ${memberRole}, CAST(GETDATE() AS DATE))
-    `;
+    const result = await db.query(
+      `INSERT INTO groupmembers (groupid, userid, role, joindate)
+       VALUES ($1, $2, $3, CURRENT_DATE) RETURNING *`,
+      [groupId, userId, memberRole]
+    );
 
-    const member = result.recordset[0];
+    const member = result.rows[0];
 
-    // If signatory, also add to GroupSignatories
     if (memberRole === "signatory") {
-      await sql.query`
-        INSERT INTO GroupSignatories (GroupID, MemberID)
-        VALUES (${groupId}, ${member.MemberID})
-      `;
+      await db.query(
+        "INSERT INTO groupsignatories (groupid, memberid) VALUES ($1, $2)",
+        [groupId, member.memberid]
+      );
     }
 
     res.status(201).json(member);
@@ -62,15 +59,16 @@ exports.enrollMember = async (req, res) => {
 exports.getGroupMembers = async (req, res) => {
   const { groupId } = req.params;
   try {
-    const result = await sql.query`
-      SELECT gm.MemberID, gm.Role, gm.JoinDate, gm.IsActive,
-             u.UserID, u.FirstName, u.LastName, u.Email, u.PhoneNumber
-      FROM GroupMembers gm
-      INNER JOIN Users u ON u.UserID = gm.UserID
-      WHERE gm.GroupID = ${groupId} AND gm.IsActive = 1
-      ORDER BY gm.Role, u.FirstName
-    `;
-    res.json(result.recordset);
+    const result = await db.query(
+      `SELECT gm.memberid, gm.role, gm.joindate, gm.isactive,
+              u.userid, u.firstname, u.lastname, u.email, u.phonenumber
+       FROM groupmembers gm
+       INNER JOIN users u ON u.userid = gm.userid
+       WHERE gm.groupid = $1 AND gm.isactive = true
+       ORDER BY gm.role, u.firstname`,
+      [groupId]
+    );
+    res.json(result.rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -80,12 +78,12 @@ exports.getGroupMembers = async (req, res) => {
 exports.getMemberBalance = async (req, res) => {
   const { groupId, memberId } = req.params;
   try {
-    const result = await sql.query`
-      SELECT * FROM vw_MemberBalances
-      WHERE GroupID = ${groupId} AND MemberID = ${memberId}
-    `;
-    if (result.recordset.length === 0) return res.status(404).json({ error: "Member not found" });
-    res.json(result.recordset[0]);
+    const result = await db.query(
+      "SELECT * FROM vw_member_balances WHERE groupid = $1 AND memberid = $2",
+      [groupId, memberId]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ error: "Member not found" });
+    res.json(result.rows[0]);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -95,11 +93,11 @@ exports.getMemberBalance = async (req, res) => {
 exports.getAllMemberBalances = async (req, res) => {
   const { groupId } = req.params;
   try {
-    const result = await sql.query`
-      SELECT * FROM vw_MemberBalances WHERE GroupID = ${groupId}
-      ORDER BY MemberName
-    `;
-    res.json(result.recordset);
+    const result = await db.query(
+      "SELECT * FROM vw_member_balances WHERE groupid = $1 ORDER BY membername",
+      [groupId]
+    );
+    res.json(result.rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -109,9 +107,10 @@ exports.getAllMemberBalances = async (req, res) => {
 exports.removeMember = async (req, res) => {
   const { groupId, memberId } = req.params;
   try {
-    await sql.query`
-      UPDATE GroupMembers SET IsActive = 0 WHERE MemberID = ${memberId} AND GroupID = ${groupId}
-    `;
+    await db.query(
+      "UPDATE groupmembers SET isactive = false WHERE memberid = $1 AND groupid = $2",
+      [memberId, groupId]
+    );
     res.json({ message: "Member removed from group" });
   } catch (err) {
     res.status(500).json({ error: err.message });
