@@ -17,7 +17,8 @@ const connectDB = async () => {
     await sql.connect(config);
     console.log("Connected to SQL Server");
   } catch (err) {
-    console.error(err);
+    console.error("DB connection failed:", err.message);
+    process.exit(1);
   }
 };
 
