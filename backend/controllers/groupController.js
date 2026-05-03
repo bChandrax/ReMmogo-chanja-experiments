@@ -88,6 +88,16 @@ exports.updateGroup = async (req, res) => {
   const { groupName, description } = req.body;
 
   try {
+    // FIX 3: Only group admins can update group details
+    const adminCheck = await sql.query`
+      SELECT MemberID FROM GroupMembers
+      WHERE GroupID = ${groupId} AND UserID = ${req.user.id}
+        AND Role = 'admin' AND IsActive = 1
+    `;
+    if (adminCheck.recordset.length === 0) {
+      return res.status(403).json({ error: "Only group admins can update group details" });
+    }
+
     await sql.query`
       UPDATE MotsheloGroups
       SET GroupName = ${groupName}, Description = ${description}, UpdatedAt = GETDATE()
