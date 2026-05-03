@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Handshake, Settings, Info, Home, GroupIcon, MessageCircle, Banknote, Coins } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
+import "./sideBar.css";
 
 export default function SideBar() {
   const location = useLocation();
@@ -16,7 +17,7 @@ export default function SideBar() {
         <span className="logo-k">K</span>
       </div>
 
-      <nav className="nav">
+      <nav className="navigation">
         <Link to="/pdash"            className={`nav-item ${location.pathname === "/dashboard"         ? "nav-item-active" : ""}`}><Home size={18} />Dashboard</Link>
         <Link to="/myGroups"         className={`nav-item ${location.pathname === "/my-groups"         ? "nav-item-active" : ""}`}><GroupIcon size={18} />My Groups</Link>
         <Link to="/myContributions"  className={`nav-item ${location.pathname === "/my-contributions"  ? "nav-item-active" : ""}`}><Coins size={18} />My Contributions</Link>
