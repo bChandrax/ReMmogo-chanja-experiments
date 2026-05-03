@@ -1,14 +1,14 @@
-const { sql } = require("../config/db");
+const { db } = require("../config/db");
 
 // YEAR-END REPORT FOR A GROUP
 exports.getYearEndReport = async (req, res) => {
   const { groupId } = req.params;
   try {
-    const result = await sql.query`
-      SELECT * FROM vw_YearEndReport WHERE GroupID = ${groupId}
-      ORDER BY MemberName
-    `;
-    res.json(result.recordset);
+    const result = await db.query(
+      "SELECT * FROM vw_year_end_report WHERE groupid = $1 ORDER BY membername",
+      [groupId]
+    );
+    res.json(result.rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -18,63 +18,67 @@ exports.getYearEndReport = async (req, res) => {
 exports.getGroupSummary = async (req, res) => {
   const { groupId } = req.params;
   try {
-    const members = await sql.query`
-      SELECT COUNT(*) AS TotalMembers FROM GroupMembers WHERE GroupID = ${groupId} AND IsActive = 1
-    `;
+    const members = await db.query(
+      "SELECT COUNT(*) AS totalmembers FROM groupmembers WHERE groupid = $1 AND isactive = true",
+      [groupId]
+    );
 
-    const contributions = await sql.query`
-      SELECT
-        SUM(CASE WHEN Status = 'approved' THEN AmountPaid ELSE 0 END) AS TotalCollected,
-        SUM(CASE WHEN Status = 'pending' THEN AmountDue ELSE 0 END) AS TotalPending,
-        COUNT(CASE WHEN Status = 'submitted' THEN 1 END) AS PendingApprovals
-      FROM MonthlyContributions WHERE GroupID = ${groupId}
-    `;
+    const contributions = await db.query(
+      `SELECT
+         SUM(CASE WHEN status = 'approved' THEN amountpaid ELSE 0 END) AS totalcollected,
+         SUM(CASE WHEN status = 'pending' THEN amountdue ELSE 0 END) AS totalpending,
+         COUNT(CASE WHEN status = 'submitted' THEN 1 END) AS pendingapprovals
+       FROM monthlycontributions WHERE groupid = $1`,
+      [groupId]
+    );
 
-    const loans = await sql.query`
-      SELECT
-        COUNT(CASE WHEN Status = 'pending_approval' THEN 1 END) AS PendingLoans,
-        COUNT(CASE WHEN Status = 'disbursed' THEN 1 END) AS ActiveLoans,
-        SUM(CASE WHEN Status = 'disbursed' THEN OutstandingBalance ELSE 0 END) AS TotalOutstanding,
-        SUM(CASE WHEN Status = 'settled' THEN PrincipalAmount ELSE 0 END) AS TotalSettled
-      FROM Loans WHERE GroupID = ${groupId}
-    `;
+    const loans = await db.query(
+      `SELECT
+         COUNT(CASE WHEN status = 'pending_approval' THEN 1 END) AS pendingloans,
+         COUNT(CASE WHEN status = 'disbursed' THEN 1 END) AS activeloans,
+         SUM(CASE WHEN status = 'disbursed' THEN outstandingbalance ELSE 0 END) AS totaloutstanding,
+         SUM(CASE WHEN status = 'settled' THEN principalamount ELSE 0 END) AS totalsettled
+       FROM loans WHERE groupid = $1`,
+      [groupId]
+    );
 
     res.json({
-      members: members.recordset[0],
-      contributions: contributions.recordset[0],
-      loans: loans.recordset[0],
+      members: members.rows[0],
+      contributions: contributions.rows[0],
+      loans: loans.rows[0],
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
-// MEMBER STATEMENT (all activity for one member)
+// MEMBER STATEMENT
 exports.getMemberStatement = async (req, res) => {
   const { groupId, memberId } = req.params;
   try {
-    const balance = await sql.query`
-      SELECT * FROM vw_MemberBalances WHERE GroupID = ${groupId} AND MemberID = ${memberId}
-    `;
+    const balance = await db.query(
+      "SELECT * FROM vw_member_balances WHERE groupid = $1 AND memberid = $2",
+      [groupId, memberId]
+    );
 
-    const contributions = await sql.query`
-      SELECT * FROM MonthlyContributions
-      WHERE GroupID = ${groupId} AND MemberID = ${memberId}
-      ORDER BY ContributionMonth DESC
-    `;
+    const contributions = await db.query(
+      "SELECT * FROM monthlycontributions WHERE groupid = $1 AND memberid = $2 ORDER BY contributionmonth DESC",
+      [groupId, memberId]
+    );
 
-    const loans = await sql.query`
-      SELECT l.*, lis.InterestCharged
-      FROM Loans l
-      LEFT JOIN LoanInterestSchedule lis ON lis.LoanID = l.LoanID
-      WHERE l.GroupID = ${groupId} AND l.BorrowerMemberID = ${memberId}
-      ORDER BY l.RequestedAt DESC
-    `;
+    const loans = await db.query(
+      `SELECT l.*, lis.interestcharged
+       FROM loans l
+       LEFT JOIN loaninterestschedule lis ON lis.loanid = l.loanid
+       WHERE l.groupid = $1 AND l.borrowermemberid = $2
+       ORDER BY l.requestedat DESC`,
+      [groupId, memberId]
+    );
 
     res.json({
-      balance: balance.recordset[0],
-      contributions: contributions.recordset,
-      loans: loans.recordset,
+      balance: balance.rows[0],
+      contributions: contributions.rows,
+      loans: loans.rows,
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
