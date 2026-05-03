@@ -8,6 +8,9 @@ import MyContributions from "./pages/myContributions/myContributions";
 import MyLoans from "./pages/myLoans/myLoans";
 import CreateGroup from "./pages/CreateGroup/Creategroup";
 import GroupDashboard from "./pages/group-dashboard/groupDashboard";
+import MessagesPage from "./pages/messages/MessagesPage";
+import SettingsPage from "./pages/settings/SettingsPage";
+import SupportPage from "./pages/support/SupportPage";
 import './App.css';
 
 function App() {
@@ -22,6 +25,9 @@ function App() {
       <Route path="/myLoans" element={<MyLoans />} />
       <Route path="/createGroup" element={<CreateGroup />} />
       <Route path="/GrpDash" element={<GroupDashboard />} />
+      <Route path="/messages" element={<MessagesPage />} />
+      <Route path="/settings" element={<SettingsPage />} />
+      <Route path="/support" element={<SupportPage />} />
     </Routes>
   );
 }
