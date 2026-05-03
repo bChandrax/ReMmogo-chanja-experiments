@@ -1,26 +1,27 @@
-import { useState, lazy } from "react";
+import { useState } from "react";
+import { Link } from "react-router-dom";
 import SideBar from "../../components/sideBar/sideBar";
 import "../../pages/personal-dashboard/PersonalDashboard.css"
 import DashboardNavBar from "../../components/NavBar/DashboardNavBar";
 
 export const BILL_CARDS = [
-  { label: "Total Contributions This Year", amount: "+$12,480.00", change: "6.4%", iconBg: "#2c3e1f" },
-  { label: "Current Loan Balance", amount: "P4,800.00", change: "3.1%", iconBg: "#9db88a" },
-  { label: "Interest Paid", amount: "+$3,750.00", change: "1.9%", iconBg: "#b5c9a0" },
-  { label: "Available Borrowing Limit", amount: "P8,000.00", change: "0.8%", iconBg: "#c8d5be" },
+  { label: "Total Contributions This Year", amount: "P12,000.00", change: "4 months paid", iconBg: "#2c3e1f" },
+  { label: "Current Loan Balance", amount: "P3,200.00", change: "20% interest/month", iconBg: "#9db88a" },
+  { label: "Interest Raised", amount: "P5,300.00", change: "↑ across all groups", iconBg: "#b5c9a0" },
+  { label: "Available Borrowing Limit", amount: "P8,000.00", change: "Based on contributions", iconBg: "#c8d5be" },
 ];
 
 const ALLOC_ROWS = [
-  { label: "Software & Subscriptions", pct: "54.3%", amount: "$410.00" },
-  { label: "Transportation & Travel", pct: "29.6%", amount: "$720.00" },
-  { label: "Office & Rent", pct: "16.1%", amount: "$1,180.00" },
+  { label: "Botho Savings Circle", pct: "50%", amount: "P6,000" },
+  { label: "Kgotso Family Group", pct: "33%", amount: "P4,000" },
+  { label: "Thuto Investment Club", pct: "17%", amount: "P2,000" },
 ];
 
 const TRANSACTIONS = [
-  { name: "Blue Bottle Coffee", cat: "Food & Beverage", amount: "− $18.50", date: "Mar 5", iconBg: "#e8f0e0" },
-  { name: "Amazon Web Services", cat: "Business Tools", amount: "− $142.00", date: "Mar 5", iconBg: "#e0eaf5" },
-  { name: "Uber Ride", cat: "Transportation", amount: "− $26.40", date: "Mar 4", iconBg: "#fdf0e0" },
-  { name: "WeWork Monthly Desk", cat: "Office Space", amount: "− $350.00", date: "Mar 3", iconBg: "#ede8f5" },
+  { name: "Botho Savings Circle", cat: "Monthly Contribution — Apr 2026", amount: "− P1,000", date: "Apr 2", iconBg: "#e8f0e0" },
+  { name: "Kgotso Family Group", cat: "Monthly Contribution — Apr 2026", amount: "− P1,000", date: "Apr 4", iconBg: "#deecd0" },
+  { name: "Loan Repayment", cat: "Botho Savings Circle — Partial", amount: "− P1,640", date: "Apr 3", iconBg: "#fdf0e0" },
+  { name: "Thuto Investment Club", cat: "Monthly Contribution — Apr 2026", amount: "− P1,000", date: "Mar 31", iconBg: "#d4e8c2" },
 ];
 
 export default function PersonalDashboard() {
@@ -38,8 +39,8 @@ export default function PersonalDashboard() {
           {/* Bills & Payments */}
           <div className="panel">
             <div className="panel-header">
-              <span className="panel-title">Bills & Payments</span>
-              <span className="see-all">See All ›</span>
+              <span className="panel-title">Financial Overview</span>
+              <Link to="/myGroups" className="see-all">See All ›</Link>
             </div>
             <div className="bills-grid">
               {BILL_CARDS.map((card) => (
@@ -47,17 +48,17 @@ export default function PersonalDashboard() {
                   <div className="bill-icon" style={{ background: card.iconBg }} />
                   <div className="bill-label">{card.label}</div>
                   <div className="bill-amount">{card.amount}</div>
-                  <div className="bill-change">↑ {card.change} vs last month</div>
+                  <div className="bill-change">{card.change}</div>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Monthly Budget Health */}
+          {/* Monthly Contribution Status */}
           <div className="panel">
             <div className="panel-header">
               <span className="panel-title">My Monthly Contribution Status</span>
-              <button className="btn">March 2026 ▾</button>
+              <button className="btn">May 2026 ▾</button>
             </div>
             <div className="budget-legend">
               {[["#2c3e1f", "Paid"], ["#9db88a", "Pending Approval"], ["#d5dece", "Not Paid"]].map(([color, label]) => (
@@ -74,26 +75,25 @@ export default function PersonalDashboard() {
                 <path d="M20,100 A80,80 0 0,1 180,100" fill="none" stroke="#2c3e1f" strokeWidth="22" strokeLinecap="round" strokeDasharray="251.3" strokeDashoffset="155"/>
               </svg>
               <div className="gauge-label">
-                <div className="gauge-avail">Available</div>
-                <div className="gauge-amount">$9,860.50</div>
-                <div className="gauge-daily">(≈ $318.72 per day)</div>
+                <div className="gauge-avail">Total Paid</div>
+                <div className="gauge-amount">P3,000</div>
+                <div className="gauge-daily">3 groups this month</div>
               </div>
             </div>
           </div>
 
-          {/* Spending Allocation */}
+          {/* My Loan Section */}
           <div className="panel">
-            
             <div className="panel-header">
               <span className="panel-title">My Loan Section</span>
-              <span className="see-all">See All ›</span>
+              <Link to="/myLoans" className="see-all">See All ›</Link>
             </div>
 
-            <div className="alloc-total">Total Budget</div>
+            <div className="alloc-total">Total Outstanding Loans</div>
 
             <div>
-              <span className="alloc-amount">$14,200.00</span>
-              <span className="alloc-change">↑ 4.2% vs last month</span>
+              <span className="alloc-amount">P3,200.00</span>
+              <span className="alloc-change">↑ 20% interest/month</span>
             </div>
 
             <div className="alloc-bar">
@@ -103,7 +103,7 @@ export default function PersonalDashboard() {
             </div>
 
             <div className="bar-legend">
-              {[["#2c3e1f", "Spent So Far"], ["#9db88a", "Upcoming Commitments"], ["#d5dece", "Still Available"]].map(([color, label]) => (
+              {[["#2c3e1f", "Principal Paid"], ["#9db88a", "Interest Accrued"], ["#d5dece", "Remaining Balance"]].map(([color, label]) => (
                 <div key={label} className="bar-leg-item">
                   <div style={{ width: 8, height: 8, borderRadius: "50%", background: color }} />
                   {label}
@@ -125,19 +125,15 @@ export default function PersonalDashboard() {
 
           </div>
 
-          {/* Recent Transactions */}
+          {/* Recent Activity */}
           <div className="panel">
 
             <div className="txn-header">
               <span className="panel-title">My Activity</span>
-              <div style={{ textAlign: "right" }}>
-                <span style={{ fontSize: 14, fontWeight: 500 }}>$842.15</span>
-                <span className="txn-since"> Since Monday</span>
-              </div>
             </div>
 
             {TRANSACTIONS.map((t) => (
-              <div key={t.name} className="txn-row">
+              <div key={t.name + t.cat} className="txn-row">
                 <div className="txn-icon" style={{ background: t.iconBg }} />
                 <div className="txn-info">
                   <div className="txn-name">{t.name}</div>

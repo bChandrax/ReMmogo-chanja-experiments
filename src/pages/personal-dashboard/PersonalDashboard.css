@@ -476,3 +476,17 @@ body{
   font-size: 10px;
   color: #888;
 }
+/* Create Group link in activity panel */
+.create-group-link {
+  font-size: 11px;
+  font-weight: 500;
+  color: #fff;
+  background: #2c3e1f;
+  padding: 4px 12px;
+  border-radius: 20px;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+.create-group-link:hover {
+  background: #3b5e1a;
+}
