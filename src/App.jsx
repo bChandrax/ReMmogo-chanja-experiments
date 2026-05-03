@@ -6,9 +6,8 @@ import MyGroups from "./pages/mygroups/myGroups";
 import ExplorePage from "./pages/explore/explorePage";
 import MyContributions from "./pages/myContributions/myContributions";
 import MyLoans from "./pages/myLoans/myLoans";
-import Notifications from "./pages/Notifications/Notifications";
-import MyStatements from "./pages/myStatements/myStatements";
-import PaymentProof from "./pages/paymentProof/paymentProof";
+import CreateGroup from "./pages/CreateGroup/Creategroup";
+import GroupDashboard from "./pages/group-dashboard/groupDashboard";
 import './App.css';
 
 function App() {
@@ -18,13 +17,11 @@ function App() {
       <Route path="/pdash" element={<PersonalDashboard />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/myGroups" element={<MyGroups />} />
-      <Route path="/exploreGroups" element={<ExplorePage />} />
+      <Route path="/explore" element={<ExplorePage />} />
       <Route path="/myContributions" element={<MyContributions />} />
       <Route path="/myLoans" element={<MyLoans />} />
-      <Route path="/notifications" element={<Notifications />} />
-      <Route path="/myStatements" element={<MyStatements />} />
-      <Route path="/paymentProofs" element={<PaymentProof />} />
-      <Route path="/myStatements" element={<MyStatements />} />
+      <Route path="/createGroup" element={<CreateGroup />} />
+      <Route path="/GrpDash" element={<GroupDashboard />} />
     </Routes>
   );
 }

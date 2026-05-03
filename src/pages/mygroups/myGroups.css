@@ -1,222 +1,183 @@
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-body{
+body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 13px;
   background: #f5f4ef;
   color: #1a1a18;
 }
 
-.dash {
-  display: flex;
-  height: 100vh;
-  min-height: 600px;
-  background: #f5f4ef;
-}
+.dash { display: flex; height: 100vh; min-height: 600px; background: #f5f4ef; }
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
 
-.main {
+/* ======= Page Content ======= */
+.mg-content {
   flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  gap: 16px;
 }
 
-/* ================================Sidebar================================ */
-.sidebar {
-  width: 160px;
-  flex-shrink: 0;
-  background: #fff;
-  border-right: 0.5px solid #e0ddd5;
+/* Header */
+.mg-page-header {
   display: flex;
-  flex-direction: column;
-}
-
-.logo {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 16px 14px;
-  border-bottom: 0.5px solid #e0ddd5;
-}
-
-.logo-icon {
-  width: 28px;
-  height: 28px;
-  background: #2c3e1f;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  font-size: 11px;
-  font-weight: 500;
-}
-
-.logo-text {
-  font-size: 13px;
-  font-weight: 500;
-  color: #1a1a18;
-}
-
-.logo-k {
-  margin-left: auto;
-  font-size: 11px;
-  color: #888;
-  background: #f5f4ef;
-  border-radius: 4px;
-  padding: 1px 5px;
-}
-
-.nav {
-  flex: 1;
-  padding: 12px 0;
-}
-
-.nav-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 14px;
-  font-size: 12px;
-  color: #666;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.nav-item:hover {
-  background: #f5f4ef;
-}
-
-.nav-item-active {
-  background: #2c3e1f;
-  color: #fff;
-  border-radius: 0 20px 20px 0;
-  margin-right: 12px;
-}
-
-.nav-item-active:hover {
-  background: #2c3e1f;
-}
-
-.nav-divider {
-  border-top: 0.5px solid #e0ddd5;
-  margin: 8px 0;
-}
-
-.sidebar-bottom {
-  padding: 12px 14px;
-  border-top: 0.5px solid #e0ddd5;
-}
-
-.user-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.user-avatar {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: #c8d9b0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 10px;
-  font-weight: 500;
-  color: #3b5e1a;
-  flex-shrink: 0;
-}
-
-.user-info p {
-  font-size: 11px;
-  font-weight: 500;
-  color: #1a1a18;
-}
-
-.user-info span {
-  font-size: 10px;
-  color: #888;
-}
-
-.topbar {
-  background: #fff;
-  border-bottom: 0.5px solid #e0ddd5;
-  padding: 12px 20px;
-  display: flex;
-  align-items: center;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
   gap: 12px;
 }
 
-.topbar-left {
-  flex: 1;
-}
-
-.topbar-left h1 {
-  font-size: 15px;
-  font-weight: 500;
+.mg-page-title {
+  font-size: 16px;
+  font-weight: 600;
   color: #1a1a18;
 }
 
-.topbar-left p {
+.mg-page-sub {
   font-size: 11px;
   color: #888;
   margin-top: 2px;
 }
 
-.search-box {
+.mg-header-actions {
   display: flex;
   align-items: center;
-  gap: 6px;
-  border: 0.5px solid #e0ddd5;
-  border-radius: 20px;
-  padding: 5px 12px;
-  font-size: 11px;
-  color: #888;
-  background: #f5f4ef;
-  width: 180px;
+  gap: 8px;
 }
 
-.btn {
+.mg-explore-link {
   display: flex;
   align-items: center;
   gap: 5px;
-  padding: 5px 10px;
+  padding: 6px 12px;
   border: 0.5px solid #e0ddd5;
   border-radius: 20px;
   font-size: 11px;
   color: #1a1a18;
   background: #fff;
   cursor: pointer;
+  text-decoration: none;
   transition: background 0.15s;
 }
 
-.btn:hover {
-  background: #f5f4ef;
-}
+.mg-explore-link:hover { background: #f5f4ef; }
 
-/* ================================
-   Content grid
-   ================================ */
-
-.content {
-  flex: 1;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: auto auto;
-  overflow-y: auto;
-  padding: 5px;
-}
-
-.groups-list{
+.mg-create-btn {
   display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 14px;
+  border: none;
+  border-radius: 20px;
+  font-size: 11px;
+  color: #fff;
+  background: #2c3e1f;
+  cursor: pointer;
+  text-decoration: none;
+  font-weight: 500;
+  transition: background 0.15s;
 }
 
-.GroupCard{
-  width: 20vw
+.mg-create-btn:hover { background: #3b5e1a; }
+
+/* Summary strip */
+.mg-summary-strip {
+  background: #fff;
+  border: 0.5px solid #e0ddd5;
+  border-radius: 12px;
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+}
+
+.mg-summary-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+.mg-summary-divider {
+  width: 0.5px;
+  height: 28px;
+  background: #e0ddd5;
+}
+
+.mg-summary-value {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1a1a18;
+}
+
+.mg-summary-label {
+  font-size: 10px;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+/* Section label */
+.mg-section-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+/* Cards */
+.groups-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+/* Explore banner */
+.mg-explore-banner {
+  background: #fff;
+  border: 0.5px solid #e0ddd5;
+  border-radius: 12px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.mg-explore-banner-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.mg-explore-banner-text strong {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a1a18;
+}
+
+.mg-explore-banner-text span {
+  font-size: 11px;
+  color: #888;
+}
+
+.mg-explore-banner-btn {
+  font-size: 12px;
+  font-weight: 500;
+  color: #2c3e1f;
+  text-decoration: none;
+  white-space: nowrap;
+  border: 0.5px solid #2c3e1f;
+  padding: 6px 14px;
+  border-radius: 20px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.mg-explore-banner-btn:hover {
+  background: #2c3e1f;
+  color: #fff;
 }
