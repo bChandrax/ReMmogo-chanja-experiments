@@ -98,20 +98,48 @@ exports.approveContribution = async (req, res) => {
       return res.status(400).json({ error: "Contribution is not in submitted state" });
     }
 
+    // FIX 5: Prevent the same signatory from approving twice
+    const alreadyApproved = await sql.query`
+      SELECT 1 AS approved FROM ContributionApprovals
+      WHERE ContributionID = ${contributionId} AND SignatoryMemberID = ${signatoryMemberID}
+    `;
+    if (alreadyApproved.recordset.length > 0) {
+      return res.status(400).json({ error: "You have already reviewed this contribution" });
+    }
+
     // Record approval
     await sql.query`
       INSERT INTO ContributionApprovals (ContributionID, SignatoryMemberID, Decision, DecisionNote)
       VALUES (${contributionId}, ${signatoryMemberID}, ${decision}, ${decisionNote || null})
     `;
 
-    // Update contribution status
-    await sql.query`
-      UPDATE MonthlyContributions
-      SET Status = ${decision}, UpdatedAt = GETDATE()
-      WHERE ContributionID = ${contributionId}
+    // FIX 5: Handle rejection immediately
+    if (decision === "rejected") {
+      await sql.query`
+        UPDATE MonthlyContributions
+        SET Status = 'rejected', UpdatedAt = GETDATE()
+        WHERE ContributionID = ${contributionId}
+      `;
+      return res.json({ message: "Contribution rejected" });
+    }
+
+    // FIX 5: Only mark as approved once both signatories have approved
+    const approvalCount = await sql.query`
+      SELECT COUNT(*) AS cnt FROM ContributionApprovals
+      WHERE ContributionID = ${contributionId} AND Decision = 'approved'
     `;
 
-    res.json({ message: `Contribution ${decision} successfully` });
+    if (approvalCount.recordset[0].cnt >= 2) {
+      await sql.query`
+        UPDATE MonthlyContributions
+        SET Status = 'approved', UpdatedAt = GETDATE()
+        WHERE ContributionID = ${contributionId}
+      `;
+      return res.json({ message: "Both signatories approved. Contribution recorded." });
+    }
+
+    // First signatory approved — keep status as submitted, wait for second
+    res.json({ message: "Your approval recorded. Waiting for second signatory." });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
