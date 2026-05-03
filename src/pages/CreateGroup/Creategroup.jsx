@@ -41,7 +41,7 @@ export default function CreateGroup() {
                 <strong>{form.name || 'Your group'}</strong> has been registered. You can now invite members and start recording contributions.
               </p>
               <div className="cg-success-actions">
-                <Link to="/my-groups" className="cg-success-btn-primary">View My Groups</Link>
+                <Link to="/myGroups" className="cg-success-btn-primary">View My Groups</Link>
                 <button className="cg-success-btn-secondary" onClick={() => setSubmitted(false)}>
                   Create Another
                 </button>
@@ -66,7 +66,7 @@ export default function CreateGroup() {
               <h2 className="cg-page-title">Create a Motshelo Group</h2>
               <p className="cg-page-sub">Register a new savings group and start managing contributions</p>
             </div>
-            <Link to="/personal-dashboard" className="cg-back-link">← Back to Dashboard</Link>
+            <Link to="/pdash" className="cg-back-link">← Back to Dashboard</Link>
           </div>
 
           {/* Stepper */}

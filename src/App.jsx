@@ -1,9 +1,9 @@
 import { Routes, Route } from "react-router-dom";
 import LandingPage from "./pages/landing-page/LandingPage";
-import PersonalDashboard from "./pages/personal-dashboard/personalDashboard";
+import PersonalDashboard from "./pages/personal-dashboard/PersonalDashboard";
 import LoginPage from "./pages/login/LoginPage";
 import MyGroups from "./pages/mygroups/myGroups";
-import ExplorePage from "./pages/explore/explorePage";
+import ExplorePage from "./pages/explore/ExplorePage";
 import MyContributions from "./pages/myContributions/myContributions";
 import MyLoans from "./pages/myLoans/myLoans";
 import CreateGroup from "./pages/CreateGroup/Creategroup";
