@@ -1,11 +1,8 @@
-<<<<<<< HEAD
 /* ═══════════════════════════════════════════════════════
    Re-Mmogo Landing Page — Cream & Dark Green Theme
    Professional Transitions & Animations
    ═══════════════════════════════════════════════════════ */
 
-=======
->>>>>>> f348d582a018f8d6699913338cd5a5b1b58a1ce8
 /* ── ROOT VARIABLES ── */
 :root {
   --bg:          #F9F7F2;
@@ -205,7 +202,6 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 
 /* ── NAVBAR (Pill-shaped) ── */
 .nav {
-<<<<<<< HEAD
   position: fixed;
   top: 20px;
   left: 50%;
@@ -215,14 +211,6 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   width: calc(100% - 40px);
   max-width: calc(var(--max-width) - 40px);
   transition: all var(--transition-base) var(--ease-out);
-=======
-  position: sticky; 
-  top: 0; 
-  z-index: 100;
-  padding: 16px 40px;
-  transition: all 0.3s;
-  height: 10vh;
->>>>>>> f348d582a018f8d6699913338cd5a5b1b58a1ce8
 }
 
 .nav-scrolled {
