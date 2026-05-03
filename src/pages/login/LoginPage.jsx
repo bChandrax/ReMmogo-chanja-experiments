@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { Mail, Lock, User, Eye, EyeOff, ArrowRight, Check } from "lucide-react"
+import { Mail, Lock, User, Eye, EyeOff, ArrowRight, Check, Handshake } from "lucide-react"
 import "./LoginPage.css"
 
 export default function LoginPage() {
@@ -95,8 +95,10 @@ export default function LoginPage() {
             {/* ── SIGN IN FORM ── */}
             <div className="login-form">
               <div className="login-logo">
-                <span className="login-logo-dot" />
-                FinanceUs
+                <div className="login-logo-icon">
+                  <Handshake size={16} />
+                </div>
+                Re-Mmogo
               </div>
 
               <h1 className="login-heading">Hello,<br />Welcome Back</h1>
@@ -105,7 +107,7 @@ export default function LoginPage() {
               <form onSubmit={handleSignIn}>
                 <div className="login-field">
                   <div className="login-input-wrapper">
-                    <Mail size={16} className="login-input-icon" />
+                    <Mail size={18} className="login-input-icon" />
                     <input
                       className="login-input"
                       type="email"
@@ -118,7 +120,7 @@ export default function LoginPage() {
                 </div>
                 <div className="login-field">
                   <div className="login-input-wrapper">
-                    <Lock size={16} className="login-input-icon" />
+                    <Lock size={18} className="login-input-icon" />
                     <input
                       className="login-input"
                       type={showPassword ? "text" : "password"}
@@ -128,7 +130,7 @@ export default function LoginPage() {
                       required
                     />
                     <button type="button" className="login-toggle-password" onClick={() => setShowPassword(v => !v)}>
-                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
                   </div>
                 </div>
@@ -154,17 +156,19 @@ export default function LoginPage() {
             {/* ── SIGN UP FORM ── */}
             <div className="login-form">
               <div className="login-logo">
-                <span className="login-logo-dot" />
-                FinanceUs
+                <div className="login-logo-icon">
+                  <Handshake size={16} />
+                </div>
+                Re-Mmogo
               </div>
 
               <h1 className="login-heading">Create<br />Your Account</h1>
-              <p className="login-subtitle">Join FinanceUs and take control of your finances</p>
+              <p className="login-subtitle">Join Re-Mmogo and start managing your motshelo</p>
 
               <form onSubmit={handleSignUp}>
                 <div className="login-field">
                   <div className="login-input-wrapper">
-                    <User size={16} className="login-input-icon" />
+                    <User size={18} className="login-input-icon" />
                     <input
                       className="login-input"
                       type="text"
@@ -177,7 +181,7 @@ export default function LoginPage() {
                 </div>
                 <div className="login-field">
                   <div className="login-input-wrapper">
-                    <Mail size={16} className="login-input-icon" />
+                    <Mail size={18} className="login-input-icon" />
                     <input
                       className="login-input"
                       type="email"
@@ -190,7 +194,7 @@ export default function LoginPage() {
                 </div>
                 <div className="login-field">
                   <div className="login-input-wrapper">
-                    <Lock size={16} className="login-input-icon" />
+                    <Lock size={18} className="login-input-icon" />
                     <input
                       className="login-input"
                       type={showConfirmPassword ? "text" : "password"}
@@ -200,7 +204,7 @@ export default function LoginPage() {
                       required
                     />
                     <button type="button" className="login-toggle-password" onClick={() => setShowConfirmPassword(v => !v)}>
-                      {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
                   </div>
                 </div>
