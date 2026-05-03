@@ -1,12 +1,13 @@
-import { useState } from "react";
+import { useState, lazy } from "react";
 import SideBar from "../../components/sideBar/sideBar";
 import "../../pages/personal-dashboard/PersonalDashboard.css"
+import DashboardNavBar from "../../components/NavBar/DashboardNavBar";
 
 export const BILL_CARDS = [
-  { label: "Business Revenue", amount: "+$12,480.00", change: "6.4%", iconBg: "#2c3e1f" },
-  { label: "Membership Plans", amount: "+$1,240.00", change: "3.1%", iconBg: "#9db88a" },
-  { label: "Consulting Income", amount: "+$3,750.00", change: "1.9%", iconBg: "#b5c9a0" },
-  { label: "Miscellaneous Income", amount: "+$420.00", change: "0.8%", iconBg: "#c8d5be" },
+  { label: "Total Contributions This Year", amount: "+$12,480.00", change: "6.4%", iconBg: "#2c3e1f" },
+  { label: "Current Loan Balance", amount: "P4,800.00", change: "3.1%", iconBg: "#9db88a" },
+  { label: "Interest Paid", amount: "+$3,750.00", change: "1.9%", iconBg: "#b5c9a0" },
+  { label: "Available Borrowing Limit", amount: "P8,000.00", change: "0.8%", iconBg: "#c8d5be" },
 ];
 
 const ALLOC_ROWS = [
@@ -30,15 +31,7 @@ export default function PersonalDashboard() {
 
       <div className="main">
 
-        <div className="topbar">
-          <div className="topbar-left">
-            <h1>Welcome back, Aarav</h1>
-            <p>Here's a real-time snapshot of your financial health across accounts and obligations</p>
-          </div>
-          <div className="search-box">🔍 Search transactions, vendors...</div>
-          <button className="btn">+ Add Account</button>
-          <button className="btn">+ Liabilities</button>
-        </div>
+        <DashboardNavBar />
 
         <div className="content">
 
@@ -63,11 +56,11 @@ export default function PersonalDashboard() {
           {/* Monthly Budget Health */}
           <div className="panel">
             <div className="panel-header">
-              <span className="panel-title">Monthly Budget Health</span>
+              <span className="panel-title">My Monthly Contribution Status</span>
               <button className="btn">March 2026 ▾</button>
             </div>
             <div className="budget-legend">
-              {[["#2c3e1f", "Planned Spending"], ["#9db88a", "Actual Spending"], ["#d5dece", "Remaining Funds"]].map(([color, label]) => (
+              {[["#2c3e1f", "Paid"], ["#9db88a", "Pending Approval"], ["#d5dece", "Not Paid"]].map(([color, label]) => (
                 <div key={label} className="legend-item">
                   <div className="legend-dot" style={{ background: color }} />
                   {label}
@@ -90,20 +83,25 @@ export default function PersonalDashboard() {
 
           {/* Spending Allocation */}
           <div className="panel">
+            
             <div className="panel-header">
-              <span className="panel-title">Spending Allocation</span>
+              <span className="panel-title">My Loan Section</span>
               <span className="see-all">See All ›</span>
             </div>
+
             <div className="alloc-total">Total Budget</div>
+
             <div>
               <span className="alloc-amount">$14,200.00</span>
               <span className="alloc-change">↑ 4.2% vs last month</span>
             </div>
+
             <div className="alloc-bar">
               <div className="bar-seg1" />
               <div className="bar-seg2" />
               <div className="bar-seg3" />
             </div>
+
             <div className="bar-legend">
               {[["#2c3e1f", "Spent So Far"], ["#9db88a", "Upcoming Commitments"], ["#d5dece", "Still Available"]].map(([color, label]) => (
                 <div key={label} className="bar-leg-item">
@@ -112,6 +110,7 @@ export default function PersonalDashboard() {
                 </div>
               ))}
             </div>
+
             <table className="alloc-table">
               <tbody>
                 {ALLOC_ROWS.map((row) => (
@@ -123,17 +122,20 @@ export default function PersonalDashboard() {
                 ))}
               </tbody>
             </table>
+
           </div>
 
           {/* Recent Transactions */}
           <div className="panel">
+
             <div className="txn-header">
-              <span className="panel-title">Recent Transactions</span>
+              <span className="panel-title">My Activity</span>
               <div style={{ textAlign: "right" }}>
                 <span style={{ fontSize: 14, fontWeight: 500 }}>$842.15</span>
                 <span className="txn-since"> Since Monday</span>
               </div>
             </div>
+
             {TRANSACTIONS.map((t) => (
               <div key={t.name} className="txn-row">
                 <div className="txn-icon" style={{ background: t.iconBg }} />
@@ -147,6 +149,7 @@ export default function PersonalDashboard() {
                 </div>
               </div>
             ))}
+
           </div>
 
         </div>

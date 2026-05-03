@@ -145,10 +145,6 @@ body{
   color: #888;
 }
 
-/* ================================
-   Topbar
-   ================================ */
-
 .topbar {
   background: #fff;
   border-bottom: 0.5px solid #e0ddd5;
@@ -224,7 +220,7 @@ body{
 .panel {
   background: #fff;
   border: 0.5px solid #e0ddd5;
-  margin: 10px;
+  margin: 5px;
   border-radius: 12px;
   padding: 14px;
 }
