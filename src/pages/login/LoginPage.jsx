@@ -90,7 +90,7 @@ export default function LoginPage() {
         <div className="login-form-panel">
           <div
             className="login-form-slider"
-            style={{ transform: showSignUp ? "translateX(-50%)" : "translateX(0)" }}
+            style={{ transform: showSignUp ? "translateX(-100%)" : "translateX(0)" }}
           >
             {/* ── SIGN IN FORM ── */}
             <div className="login-form">
