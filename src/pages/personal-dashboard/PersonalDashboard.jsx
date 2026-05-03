@@ -40,7 +40,7 @@ export default function PersonalDashboard() {
           <div className="panel">
             <div className="panel-header">
               <span className="panel-title">Financial Overview</span>
-              <Link to="/my-groups" className="see-all">See All ›</Link>
+              <Link to="/myGroups" className="see-all">See All ›</Link>
             </div>
             <div className="bills-grid">
               {BILL_CARDS.map((card) => (
@@ -86,7 +86,7 @@ export default function PersonalDashboard() {
           <div className="panel">
             <div className="panel-header">
               <span className="panel-title">My Loan Section</span>
-              <Link to="/my-loans" className="see-all">See All ›</Link>
+              <Link to="/myLoans" className="see-all">See All ›</Link>
             </div>
 
             <div className="alloc-total">Total Outstanding Loans</div>
@@ -130,9 +130,6 @@ export default function PersonalDashboard() {
 
             <div className="txn-header">
               <span className="panel-title">My Activity</span>
-              <div style={{ textAlign: "right" }}>
-                <Link to="/create-group" className="create-group-link">+ New Group</Link>
-              </div>
             </div>
 
             {TRANSACTIONS.map((t) => (
