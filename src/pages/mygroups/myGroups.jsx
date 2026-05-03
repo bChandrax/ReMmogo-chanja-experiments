@@ -101,12 +101,14 @@ export default function MyGroups() {
           </div>
 
           {/* Group cards */}
+          <Link to="/GrpDash">
           <div className="mg-section-label">Your Groups</div>
           <div className="groups-list">
             {MY_GROUPS.map((g, i) => (
               <GroupCard key={i} {...g} colorIndex={i} />
             ))}
           </div>
+          </Link>
 
           {/* Empty-state prompt to explore */}
           <div className="mg-explore-banner">

@@ -789,9 +789,10 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 .gauge-fill-animated {
-  stroke: url(#gaugeGradient);
+  stroke: url(#gaugeGradient);/*
   strokeDasharray: 251.2;
   strokeDashoffset: 251.2;
+  */
   animation: gaugeFill 1.5s var(--ease-out) 0.5s forwards;
 }
 

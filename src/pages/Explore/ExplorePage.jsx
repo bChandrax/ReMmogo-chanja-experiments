@@ -92,8 +92,8 @@ export default function ExplorePage() {
               <p className="ep-page-sub">Discover motshelo groups accepting new members</p>
             </div>
             <div className="ep-header-actions">
-              <Link to="/my-groups" className="ep-back-link">← My Groups</Link>
-              <Link to="/create-group" className="ep-create-btn">+ Create a Group</Link>
+              <Link to="/myGroups" className="ep-back-link">← My Groups</Link>
+              <Link to="/createGroup" className="ep-create-btn">+ Create a Group</Link>
             </div>
           </div>
 
