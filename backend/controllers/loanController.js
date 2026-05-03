@@ -106,9 +106,23 @@ exports.approveLoan = async (req, res) => {
     const signatoryMemberID = sigCheck.recordset[0].MemberID;
 
     // Check loan status
-    const loanCheck = await sql.query`SELECT Status FROM Loans WHERE LoanID = ${loanId}`;
+    const loanCheck = await sql.query`SELECT Status, BorrowerMemberID FROM Loans WHERE LoanID = ${loanId}`;
     if (!["pending_approval", "approved"].includes(loanCheck.recordset[0].Status)) {
       return res.status(400).json({ error: "Loan is not pending approval" });
+    }
+
+    // FIX 1: Prevent signatory from approving their own loan
+    if (loanCheck.recordset[0].BorrowerMemberID === signatoryMemberID) {
+      return res.status(403).json({ error: "You cannot approve your own loan" });
+    }
+
+    // FIX 2: Prevent the same signatory from approving twice
+    const alreadyApproved = await sql.query`
+      SELECT 1 AS approved FROM LoanApprovals
+      WHERE LoanID = ${loanId} AND SignatoryMemberID = ${signatoryMemberID}
+    `;
+    if (alreadyApproved.recordset.length > 0) {
+      return res.status(400).json({ error: "You have already approved this loan" });
     }
 
     // Record decision
