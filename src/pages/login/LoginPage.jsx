@@ -17,12 +17,12 @@ export default function LoginPage() {
 
   function handleSignIn(e) {
     e.preventDefault()
-    navigate("/personal-dashboard")
+    navigate("/pdash")
   }
 
   function handleSignUp(e) {
     e.preventDefault()
-    navigate("/personal-dashboard")
+    navigate("/pdash")
   }
 
   return (
