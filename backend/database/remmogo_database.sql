@@ -1,596 +1,413 @@
 -- ============================================================
--- RE-MMOGO MOTSHELO WEB APP - SQL SERVER DATABASE SCHEMA
--- INFS 202 Group Project
+-- RE-MMOGO — PostgreSQL Database
+-- Run this in your Render PostgreSQL console or any pg client
 -- ============================================================
 
-USE master;
-GO
-
--- Create the database
-IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = 'ReMmogoDB')
-BEGIN
-    CREATE DATABASE ReMmogoDB;
-END
-GO
-
-USE ReMmogoDB;
-GO
+-- ============================================================
+-- DROP TABLES (safe re-run)
+-- ============================================================
+DROP TABLE IF EXISTS loaninterestschedule   CASCADE;
+DROP TABLE IF EXISTS repaymentapprovals     CASCADE;
+DROP TABLE IF EXISTS loanrepayments         CASCADE;
+DROP TABLE IF EXISTS loanapprovals          CASCADE;
+DROP TABLE IF EXISTS loans                  CASCADE;
+DROP TABLE IF EXISTS contributionapprovals  CASCADE;
+DROP TABLE IF EXISTS monthlycontributions   CASCADE;
+DROP TABLE IF EXISTS groupsignatories       CASCADE;
+DROP TABLE IF EXISTS groupmembers           CASCADE;
+DROP TABLE IF EXISTS motshelogroups         CASCADE;
+DROP TABLE IF EXISTS users                  CASCADE;
 
 -- ============================================================
--- 1. USERS TABLE
+-- 1. USERS
 -- ============================================================
-CREATE TABLE Users (
-    UserID          INT IDENTITY(1,1) PRIMARY KEY,
-    FirstName       NVARCHAR(100)   NOT NULL,
-    LastName        NVARCHAR(100)   NOT NULL,
-    Email           NVARCHAR(255)   NOT NULL UNIQUE,
-    PhoneNumber     NVARCHAR(20)    NULL,
-    PasswordHash    NVARCHAR(512)   NOT NULL,   -- bcrypt/argon2 hash
-    NationalID      NVARCHAR(50)    NULL UNIQUE, -- optional identity number
-    IsActive        BIT             NOT NULL DEFAULT 1,
-    CreatedAt       DATETIME2       NOT NULL DEFAULT GETDATE(),
-    UpdatedAt       DATETIME2       NOT NULL DEFAULT GETDATE()
+CREATE TABLE users (
+    userid          SERIAL PRIMARY KEY,
+    firstname       VARCHAR(100)    NOT NULL,
+    lastname        VARCHAR(100)    NOT NULL,
+    email           VARCHAR(255)    NOT NULL UNIQUE,
+    phonenumber     VARCHAR(20),
+    passwordhash    VARCHAR(512)    NOT NULL,
+    nationalid      VARCHAR(50)     UNIQUE,
+    isactive        BOOLEAN         NOT NULL DEFAULT TRUE,
+    createdat       TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
+    updatedat       TIMESTAMPTZ     NOT NULL DEFAULT NOW()
 );
-GO
 
 -- ============================================================
--- 2. MOTSHELO GROUPS TABLE
+-- 2. MOTSHELO GROUPS
 -- ============================================================
-CREATE TABLE MotsheloGroups (
-    GroupID             INT IDENTITY(1,1) PRIMARY KEY,
-    GroupName           NVARCHAR(200)   NOT NULL,
-    Description         NVARCHAR(500)   NULL,
-    MonthlyContribution DECIMAL(10,2)   NOT NULL DEFAULT 1000.00,  -- P1000 per month
-    RequiredInterest    DECIMAL(10,2)   NOT NULL DEFAULT 5000.00,  -- P5000 interest/year
-    LoanInterestRate    DECIMAL(5,4)    NOT NULL DEFAULT 0.20,     -- 20% per month
-    YearStartDate       DATE            NOT NULL,
-    YearEndDate         DATE            NOT NULL,
-    IsActive            BIT             NOT NULL DEFAULT 1,
-    CreatedAt           DATETIME2       NOT NULL DEFAULT GETDATE(),
-    UpdatedAt           DATETIME2       NOT NULL DEFAULT GETDATE(),
-
-    CONSTRAINT CHK_GroupDates CHECK (YearEndDate > YearStartDate)
+CREATE TABLE motshelogroups (
+    groupid             SERIAL PRIMARY KEY,
+    groupname           VARCHAR(200)    NOT NULL,
+    description         VARCHAR(500),
+    monthlycontribution NUMERIC(10,2)   NOT NULL DEFAULT 1000.00,
+    requiredinterest    NUMERIC(10,2)   NOT NULL DEFAULT 5000.00,
+    loaninterestrate    NUMERIC(5,4)    NOT NULL DEFAULT 0.20,
+    yearstartdate       DATE            NOT NULL,
+    yearenddate         DATE            NOT NULL,
+    isactive            BOOLEAN         NOT NULL DEFAULT TRUE,
+    createdat           TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
+    updatedat           TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
+    CONSTRAINT chk_group_dates CHECK (yearenddate > yearstartdate)
 );
-GO
 
 -- ============================================================
--- 3. GROUP MEMBERS TABLE
--- Many memmbers can be in many groups and many groups can have many members
--- To fix that we have the group members table which links users to groups and tracks their role (member/signatory/admin)
+-- 3. GROUP MEMBERS
 -- ============================================================
-CREATE TABLE GroupMembers (
-    MemberID        INT IDENTITY(1,1) PRIMARY KEY,
-    GroupID         INT             NOT NULL,
-    UserID          INT             NOT NULL,
-    Role            NVARCHAR(20)    NOT NULL DEFAULT 'member',
-    -- 'member' | 'signatory' | 'admin'
-    JoinDate        DATE            NOT NULL DEFAULT CAST(GETDATE() AS DATE),
-    IsActive        BIT             NOT NULL DEFAULT 1,
-    CreatedAt       DATETIME2       NOT NULL DEFAULT GETDATE(),
-
-    CONSTRAINT FK_GroupMembers_Group  FOREIGN KEY (GroupID) REFERENCES MotsheloGroups(GroupID),
-    CONSTRAINT FK_GroupMembers_User   FOREIGN KEY (UserID)  REFERENCES Users(UserID),
-    CONSTRAINT UQ_GroupMember         UNIQUE (GroupID, UserID),
-    CONSTRAINT CHK_MemberRole         CHECK (Role IN ('member', 'signatory', 'admin'))
+CREATE TABLE groupmembers (
+    memberid    SERIAL PRIMARY KEY,
+    groupid     INT         NOT NULL REFERENCES motshelogroups(groupid),
+    userid      INT         NOT NULL REFERENCES users(userid),
+    role        VARCHAR(20) NOT NULL DEFAULT 'member',
+    joindate    DATE        NOT NULL DEFAULT CURRENT_DATE,
+    isactive    BOOLEAN     NOT NULL DEFAULT TRUE,
+    createdat   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (groupid, userid),
+    CONSTRAINT chk_member_role CHECK (role IN ('member', 'signatory', 'admin'))
 );
-GO
 
 -- ============================================================
--- 4. SIGNATORIES TABLE
--- Tracks the exactly two signatories per group
+-- 4. GROUP SIGNATORIES
 -- ============================================================
-CREATE TABLE GroupSignatories (
-    SignatoryID     INT IDENTITY(1,1) PRIMARY KEY,
-    GroupID         INT             NOT NULL,
-    MemberID        INT             NOT NULL,   -- must be a GroupMember with role='signatory'
-    AssignedAt      DATETIME2       NOT NULL DEFAULT GETDATE(),
-    IsActive        BIT             NOT NULL DEFAULT 1,
-
-    CONSTRAINT FK_Signatories_Group  FOREIGN KEY (GroupID)  REFERENCES MotsheloGroups(GroupID),
-    CONSTRAINT FK_Signatories_Member FOREIGN KEY (MemberID) REFERENCES GroupMembers(MemberID),
-    CONSTRAINT UQ_Signatory          UNIQUE (GroupID, MemberID)
+CREATE TABLE groupsignatories (
+    signatoryid SERIAL PRIMARY KEY,
+    groupid     INT         NOT NULL REFERENCES motshelogroups(groupid),
+    memberid    INT         NOT NULL REFERENCES groupmembers(memberid),
+    assignedat  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    isactive    BOOLEAN     NOT NULL DEFAULT TRUE,
+    UNIQUE (groupid, memberid)
 );
-GO
 
 -- Enforce max 2 active signatories per group
-CREATE OR ALTER TRIGGER TRG_MaxTwoSignatories
-ON GroupSignatories
-AFTER INSERT, UPDATE
-AS
+CREATE OR REPLACE FUNCTION check_max_signatories()
+RETURNS TRIGGER AS $$
 BEGIN
-    SET NOCOUNT ON;
-    IF EXISTS (
-        SELECT GroupID
-        FROM GroupSignatories
-        WHERE IsActive = 1
-        GROUP BY GroupID
-        HAVING COUNT(*) > 2
-    )
-    BEGIN
-        RAISERROR('A Motshelo group cannot have more than 2 active signatories.', 16, 1);
-        ROLLBACK TRANSACTION;
-    END
+    IF (SELECT COUNT(*) FROM groupsignatories
+        WHERE groupid = NEW.groupid AND isactive = TRUE) > 2 THEN
+        RAISE EXCEPTION 'A Motshelo group cannot have more than 2 active signatories.';
+    END IF;
+    RETURN NEW;
 END;
-GO
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_max_two_signatories
+AFTER INSERT OR UPDATE ON groupsignatories
+FOR EACH ROW EXECUTE FUNCTION check_max_signatories();
 
 -- ============================================================
--- 5. MONTHLY CONTRIBUTIONS TABLE
--- Each member's P1000 monthly contribution record
+-- 5. MONTHLY CONTRIBUTIONS
 -- ============================================================
-CREATE TABLE MonthlyContributions (
-    ContributionID      INT IDENTITY(1,1) PRIMARY KEY,
-    GroupID             INT             NOT NULL,
-    MemberID            INT             NOT NULL,
-    ContributionMonth   DATE            NOT NULL,  -- first day of the month, e.g. 2025-01-01
-    AmountDue           DECIMAL(10,2)   NOT NULL DEFAULT 1000.00,
-    AmountPaid          DECIMAL(10,2)   NOT NULL DEFAULT 0.00,
-    Status              NVARCHAR(20)    NOT NULL DEFAULT 'pending',
-    -- 'pending' | 'submitted' | 'approved' | 'rejected'
-    SubmittedAt         DATETIME2       NULL,       -- when member clicked "I have paid"
-    ProofOfPayment      NVARCHAR(500)   NULL,       -- file path / URL to uploaded proof
-    CreatedAt           DATETIME2       NOT NULL DEFAULT GETDATE(),
-    UpdatedAt           DATETIME2       NOT NULL DEFAULT GETDATE(),
-
-    CONSTRAINT FK_Contributions_Group  FOREIGN KEY (GroupID)  REFERENCES MotsheloGroups(GroupID),
-    CONSTRAINT FK_Contributions_Member FOREIGN KEY (MemberID) REFERENCES GroupMembers(MemberID),
-    CONSTRAINT UQ_MemberMonthContrib   UNIQUE (GroupID, MemberID, ContributionMonth),
-    CONSTRAINT CHK_ContribStatus       CHECK (Status IN ('pending', 'submitted', 'approved', 'rejected')),
-    CONSTRAINT CHK_ContribAmounts      CHECK (AmountPaid >= 0 AND AmountDue > 0)
+CREATE TABLE monthlycontributions (
+    contributionid      SERIAL PRIMARY KEY,
+    groupid             INT             NOT NULL REFERENCES motshelogroups(groupid),
+    memberid            INT             NOT NULL REFERENCES groupmembers(memberid),
+    contributionmonth   DATE            NOT NULL,
+    amountdue           NUMERIC(10,2)   NOT NULL DEFAULT 1000.00,
+    amountpaid          NUMERIC(10,2)   NOT NULL DEFAULT 0.00,
+    status              VARCHAR(20)     NOT NULL DEFAULT 'pending',
+    submittedat         TIMESTAMPTZ,
+    proofofpayment      VARCHAR(500),
+    createdat           TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
+    updatedat           TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
+    UNIQUE (groupid, memberid, contributionmonth),
+    CONSTRAINT chk_contrib_status  CHECK (status IN ('pending','submitted','approved','rejected')),
+    CONSTRAINT chk_contrib_amounts CHECK (amountpaid >= 0 AND amountdue > 0)
 );
-GO
 
 -- ============================================================
--- 6. CONTRIBUTION APPROVALS TABLE
--- Tracks which signatories approved a contribution payment
+-- 6. CONTRIBUTION APPROVALS
 -- ============================================================
-CREATE TABLE ContributionApprovals (
-    ApprovalID          INT IDENTITY(1,1) PRIMARY KEY,
-    ContributionID      INT             NOT NULL,
-    SignatoryMemberID   INT             NOT NULL,   -- GroupMembers.MemberID of signatory
-    Decision            NVARCHAR(10)    NOT NULL,   -- 'approved' | 'rejected'
-    DecisionNote        NVARCHAR(500)   NULL,
-    DecidedAt           DATETIME2       NOT NULL DEFAULT GETDATE(),
-
-    CONSTRAINT FK_ContribApproval_Contribution FOREIGN KEY (ContributionID) REFERENCES MonthlyContributions(ContributionID),
-    CONSTRAINT FK_ContribApproval_Signatory    FOREIGN KEY (SignatoryMemberID) REFERENCES GroupMembers(MemberID),
-    CONSTRAINT UQ_ContribApprovalPerSignatory  UNIQUE (ContributionID, SignatoryMemberID),
-    CONSTRAINT CHK_ContribApprovalDecision     CHECK (Decision IN ('approved', 'rejected'))
+CREATE TABLE contributionapprovals (
+    approvalid          SERIAL PRIMARY KEY,
+    contributionid      INT         NOT NULL REFERENCES monthlycontributions(contributionid),
+    signatorymemberid   INT         NOT NULL REFERENCES groupmembers(memberid),
+    decision            VARCHAR(10) NOT NULL,
+    decisionnote        VARCHAR(500),
+    decidedat           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (contributionid, signatorymemberid),
+    CONSTRAINT chk_contrib_approval_decision CHECK (decision IN ('approved','rejected'))
 );
-GO
 
 -- ============================================================
--- 7. LOANS TABLE
--- Records each loan taken by a member
+-- 7. LOANS
 -- ============================================================
-CREATE TABLE Loans (
-    LoanID              INT IDENTITY(1,1) PRIMARY KEY,
-    GroupID             INT             NOT NULL,
-    BorrowerMemberID    INT             NOT NULL,
-    PrincipalAmount     DECIMAL(10,2)   NOT NULL,
-    InterestRate        DECIMAL(5,4)    NOT NULL DEFAULT 0.20,   -- 20% per month
-    OutstandingBalance  DECIMAL(10,2)   NOT NULL,                -- updated each month
-    Status              NVARCHAR(20)    NOT NULL DEFAULT 'pending_approval',
-    -- 'pending_approval' | 'approved' | 'rejected' | 'disbursed' | 'settled'
-    RequestedAt         DATETIME2       NOT NULL DEFAULT GETDATE(),
-    DisbursedAt         DATETIME2       NULL,
-    SettledAt           DATETIME2       NULL,
-    Notes               NVARCHAR(500)   NULL,
-    CreatedAt           DATETIME2       NOT NULL DEFAULT GETDATE(),
-    UpdatedAt           DATETIME2       NOT NULL DEFAULT GETDATE(),
-
-    CONSTRAINT FK_Loans_Group    FOREIGN KEY (GroupID)          REFERENCES MotsheloGroups(GroupID),
-    CONSTRAINT FK_Loans_Borrower FOREIGN KEY (BorrowerMemberID) REFERENCES GroupMembers(MemberID),
-    CONSTRAINT CHK_LoanPrincipal CHECK (PrincipalAmount > 0),
-    CONSTRAINT CHK_LoanStatus    CHECK (Status IN ('pending_approval','approved','rejected','disbursed','settled'))
+CREATE TABLE loans (
+    loanid              SERIAL PRIMARY KEY,
+    groupid             INT             NOT NULL REFERENCES motshelogroups(groupid),
+    borrowermemberid    INT             NOT NULL REFERENCES groupmembers(memberid),
+    principalamount     NUMERIC(10,2)   NOT NULL,
+    interestrate        NUMERIC(5,4)    NOT NULL DEFAULT 0.20,
+    outstandingbalance  NUMERIC(10,2)   NOT NULL,
+    status              VARCHAR(20)     NOT NULL DEFAULT 'pending_approval',
+    requestedat         TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
+    disbursedat         TIMESTAMPTZ,
+    settledat           TIMESTAMPTZ,
+    notes               VARCHAR(500),
+    createdat           TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
+    updatedat           TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
+    CONSTRAINT chk_loan_principal CHECK (principalamount > 0),
+    CONSTRAINT chk_loan_status    CHECK (status IN ('pending_approval','approved','rejected','disbursed','settled'))
 );
-GO
 
 -- ============================================================
--- 8. LOAN APPROVALS TABLE
--- Each signatory's approval/rejection of a loan request
--- Both signatories must approve before disbursement
+-- 8. LOAN APPROVALS
 -- ============================================================
-CREATE TABLE LoanApprovals (
-    LoanApprovalID      INT IDENTITY(1,1) PRIMARY KEY,
-    LoanID              INT             NOT NULL,
-    SignatoryMemberID   INT             NOT NULL,
-    Decision            NVARCHAR(10)    NOT NULL,   -- 'approved' | 'rejected'
-    DecisionNote        NVARCHAR(500)   NULL,
-    DecidedAt           DATETIME2       NOT NULL DEFAULT GETDATE(),
-
-    CONSTRAINT FK_LoanApproval_Loan      FOREIGN KEY (LoanID)            REFERENCES Loans(LoanID),
-    CONSTRAINT FK_LoanApproval_Signatory FOREIGN KEY (SignatoryMemberID) REFERENCES GroupMembers(MemberID),
-    CONSTRAINT UQ_LoanApprovalPerSign    UNIQUE (LoanID, SignatoryMemberID),
-    CONSTRAINT CHK_LoanApprovalDecision  CHECK (Decision IN ('approved', 'rejected'))
+CREATE TABLE loanapprovals (
+    loanapprovalid      SERIAL PRIMARY KEY,
+    loanid              INT         NOT NULL REFERENCES loans(loanid),
+    signatorymemberid   INT         NOT NULL REFERENCES groupmembers(memberid),
+    decision            VARCHAR(10) NOT NULL,
+    decisionnote        VARCHAR(500),
+    decidedat           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (loanid, signatorymemberid),
+    CONSTRAINT chk_loan_approval_decision CHECK (decision IN ('approved','rejected'))
 );
-GO
 
 -- ============================================================
--- 9. LOAN REPAYMENTS TABLE
--- Records each repayment event by borrower
--- Must be approved by signatories before balance is updated
+-- 9. LOAN REPAYMENTS
 -- ============================================================
-CREATE TABLE LoanRepayments (
-    RepaymentID         INT IDENTITY(1,1) PRIMARY KEY,
-    LoanID              INT             NOT NULL,
-    MemberID            INT             NOT NULL,   -- member making the repayment
-    AmountPaid          DECIMAL(10,2)   NOT NULL,
-    RepaymentDate       DATE            NOT NULL DEFAULT CAST(GETDATE() AS DATE),
-    Status              NVARCHAR(20)    NOT NULL DEFAULT 'submitted',
-    -- 'submitted' | 'approved' | 'rejected'
-    ProofOfPayment      NVARCHAR(500)   NULL,       -- file path / URL to proof
-    SubmittedAt         DATETIME2       NOT NULL DEFAULT GETDATE(),
-    CreatedAt           DATETIME2       NOT NULL DEFAULT GETDATE(),
-    UpdatedAt           DATETIME2       NOT NULL DEFAULT GETDATE(),
-
-    CONSTRAINT FK_Repayment_Loan   FOREIGN KEY (LoanID)   REFERENCES Loans(LoanID),
-    CONSTRAINT FK_Repayment_Member FOREIGN KEY (MemberID) REFERENCES GroupMembers(MemberID),
-    CONSTRAINT CHK_RepaymentAmount CHECK (AmountPaid > 0),
-    CONSTRAINT CHK_RepaymentStatus CHECK (Status IN ('submitted', 'approved', 'rejected'))
+CREATE TABLE loanrepayments (
+    repaymentid     SERIAL PRIMARY KEY,
+    loanid          INT             NOT NULL REFERENCES loans(loanid),
+    memberid        INT             NOT NULL REFERENCES groupmembers(memberid),
+    amountpaid      NUMERIC(10,2)   NOT NULL,
+    repaymentdate   DATE            NOT NULL DEFAULT CURRENT_DATE,
+    status          VARCHAR(20)     NOT NULL DEFAULT 'submitted',
+    proofofpayment  VARCHAR(500),
+    submittedat     TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
+    createdat       TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
+    updatedat       TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
+    CONSTRAINT chk_repayment_amount CHECK (amountpaid > 0),
+    CONSTRAINT chk_repayment_status CHECK (status IN ('submitted','approved','rejected'))
 );
-GO
 
 -- ============================================================
--- 10. LOAN REPAYMENT APPROVALS TABLE
--- Signatories approve/reject each repayment submission
+-- 10. REPAYMENT APPROVALS
 -- ============================================================
-CREATE TABLE RepaymentApprovals (
-    RepayApprovalID     INT IDENTITY(1,1) PRIMARY KEY,
-    RepaymentID         INT             NOT NULL,
-    SignatoryMemberID   INT             NOT NULL,
-    Decision            NVARCHAR(10)    NOT NULL,
-    DecisionNote        NVARCHAR(500)   NULL,
-    DecidedAt           DATETIME2       NOT NULL DEFAULT GETDATE(),
-
-    CONSTRAINT FK_RepayApproval_Repayment  FOREIGN KEY (RepaymentID)       REFERENCES LoanRepayments(RepaymentID),
-    CONSTRAINT FK_RepayApproval_Signatory  FOREIGN KEY (SignatoryMemberID) REFERENCES GroupMembers(MemberID),
-    CONSTRAINT UQ_RepayApprovalPerSign     UNIQUE (RepaymentID, SignatoryMemberID),
-    CONSTRAINT CHK_RepayApprovalDecision   CHECK (Decision IN ('approved', 'rejected'))
+CREATE TABLE repaymentapprovals (
+    repayapprovalid     SERIAL PRIMARY KEY,
+    repaymentid         INT         NOT NULL REFERENCES loanrepayments(repaymentid),
+    signatorymemberid   INT         NOT NULL REFERENCES groupmembers(memberid),
+    decision            VARCHAR(10) NOT NULL,
+    decisionnote        VARCHAR(500),
+    decidedat           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (repaymentid, signatorymemberid),
+    CONSTRAINT chk_repay_approval_decision CHECK (decision IN ('approved','rejected'))
 );
-GO
 
 -- ============================================================
--- 11. LOAN INTEREST SCHEDULE TABLE
--- Monthly interest accrual log per loan (20% on balance each month)
+-- 11. LOAN INTEREST SCHEDULE
 -- ============================================================
-CREATE TABLE LoanInterestSchedule (
-    ScheduleID          INT IDENTITY(1,1) PRIMARY KEY,
-    LoanID              INT             NOT NULL,
-    PeriodMonth         DATE            NOT NULL,   -- first day of the month
-    OpeningBalance      DECIMAL(10,2)   NOT NULL,
-    InterestCharged     DECIMAL(10,2)   NOT NULL,   -- 20% of opening balance
-    ClosingBalance      DECIMAL(10,2)   NOT NULL,
-    CreatedAt           DATETIME2       NOT NULL DEFAULT GETDATE(),
-
-    CONSTRAINT FK_InterestSchedule_Loan FOREIGN KEY (LoanID) REFERENCES Loans(LoanID),
-    CONSTRAINT UQ_LoanMonthInterest     UNIQUE (LoanID, PeriodMonth)
+CREATE TABLE loaninterestschedule (
+    scheduleid      SERIAL PRIMARY KEY,
+    loanid          INT             NOT NULL REFERENCES loans(loanid),
+    periodmonth     DATE            NOT NULL,
+    openingbalance  NUMERIC(10,2)   NOT NULL,
+    interestcharged NUMERIC(10,2)   NOT NULL,
+    closingbalance  NUMERIC(10,2)   NOT NULL,
+    createdat       TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
+    UNIQUE (loanid, periodmonth)
 );
-GO
 
 -- ============================================================
--- 12. MEMBER BALANCES VIEW
--- Convenience view: running totals per member per group
+-- 12. VIEW: MEMBER BALANCES
 -- ============================================================
-CREATE OR ALTER VIEW vw_MemberBalances AS
+CREATE OR REPLACE VIEW vw_member_balances AS
 SELECT
-    gm.MemberID,
-    gm.GroupID,
-    u.FirstName + ' ' + u.LastName                          AS MemberName,
-    u.Email,
-    gm.Role,
-
-    -- Total contributions approved
-    ISNULL(SUM(CASE WHEN mc.Status = 'approved' THEN mc.AmountPaid ELSE 0 END), 0)
-                                                            AS TotalContributionsPaid,
-
-    -- Total contributions due (all months up to today)
-    ISNULL(SUM(mc.AmountDue), 0)                            AS TotalContributionsDue,
-
-    -- Outstanding contribution balance
-    ISNULL(SUM(mc.AmountDue), 0)
-        - ISNULL(SUM(CASE WHEN mc.Status = 'approved' THEN mc.AmountPaid ELSE 0 END), 0)
-                                                            AS ContributionBalance,
-
-    -- Active loan balance
-    ISNULL((
-        SELECT SUM(l.OutstandingBalance)
-        FROM Loans l
-        WHERE l.BorrowerMemberID = gm.MemberID
-          AND l.GroupID          = gm.GroupID
-          AND l.Status           = 'disbursed'
-    ), 0)                                                   AS ActiveLoanBalance,
-
-    -- Total interest paid on loans
-    ISNULL((
-        SELECT SUM(lis.InterestCharged)
-        FROM LoanInterestSchedule lis
-        INNER JOIN Loans l ON l.LoanID = lis.LoanID
-        WHERE l.BorrowerMemberID = gm.MemberID
-          AND l.GroupID          = gm.GroupID
-    ), 0)                                                   AS TotalInterestAccrued
-
-FROM GroupMembers gm
-INNER JOIN Users             u  ON u.UserID  = gm.UserID
-LEFT  JOIN MonthlyContributions mc ON mc.MemberID = gm.MemberID
-                                  AND mc.GroupID  = gm.GroupID
-GROUP BY
-    gm.MemberID, gm.GroupID,
-    u.FirstName, u.LastName, u.Email, gm.Role;
-GO
+    gm.memberid,
+    gm.groupid,
+    u.firstname || ' ' || u.lastname                            AS membername,
+    u.email,
+    gm.role,
+    COALESCE(SUM(CASE WHEN mc.status = 'approved' THEN mc.amountpaid ELSE 0 END), 0)
+                                                                AS totalcontributionspaid,
+    COALESCE(SUM(mc.amountdue), 0)                              AS totalcontributionsdue,
+    COALESCE(SUM(mc.amountdue), 0)
+        - COALESCE(SUM(CASE WHEN mc.status = 'approved' THEN mc.amountpaid ELSE 0 END), 0)
+                                                                AS contributionbalance,
+    COALESCE((
+        SELECT SUM(l.outstandingbalance)
+        FROM loans l
+        WHERE l.borrowermemberid = gm.memberid
+          AND l.groupid          = gm.groupid
+          AND l.status           = 'disbursed'
+    ), 0)                                                       AS activeloanbalance,
+    COALESCE((
+        SELECT SUM(lis.interestcharged)
+        FROM loaninterestschedule lis
+        INNER JOIN loans l ON l.loanid = lis.loanid
+        WHERE l.borrowermemberid = gm.memberid
+          AND l.groupid          = gm.groupid
+    ), 0)                                                       AS totalinterestaccrued
+FROM groupmembers gm
+INNER JOIN users u ON u.userid = gm.userid
+LEFT  JOIN monthlycontributions mc ON mc.memberid = gm.memberid AND mc.groupid = gm.groupid
+GROUP BY gm.memberid, gm.groupid, u.firstname, u.lastname, u.email, gm.role;
 
 -- ============================================================
--- 13. YEAR-END REPORT VIEW
--- Summary for end-of-year payout calculation
+-- 13. VIEW: YEAR-END REPORT
 -- ============================================================
-CREATE OR ALTER VIEW vw_YearEndReport AS
+CREATE OR REPLACE VIEW vw_year_end_report AS
 SELECT
-    mg.GroupID,
-    mg.GroupName,
-    mg.YearStartDate,
-    mg.YearEndDate,
-    mb.MemberID,
-    mb.MemberName,
-    mb.TotalContributionsPaid,
-    mb.TotalContributionsDue,
-    mb.ContributionBalance,
-    mb.ActiveLoanBalance,
-    mb.TotalInterestAccrued,
-
-    -- Has member met the P5000 interest requirement?
-    CASE WHEN mb.TotalInterestAccrued >= mg.RequiredInterest
-         THEN 'Yes' ELSE 'No'
-    END                                                     AS MetInterestTarget,
-
-    -- Estimated year-end payout:
-    -- contributions paid - outstanding loan balance
-    mb.TotalContributionsPaid - mb.ActiveLoanBalance        AS EstimatedPayout
-
-FROM vw_MemberBalances mb
-INNER JOIN MotsheloGroups mg ON mg.GroupID = mb.GroupID;
-GO
+    mg.groupid,
+    mg.groupname,
+    mg.yearstartdate,
+    mg.yearenddate,
+    mb.memberid,
+    mb.membername,
+    mb.totalcontributionspaid,
+    mb.totalcontributionsdue,
+    mb.contributionbalance,
+    mb.activeloanbalance,
+    mb.totalinterestaccrued,
+    CASE WHEN mb.totalinterestaccrued >= mg.requiredinterest THEN 'Yes' ELSE 'No' END AS metinteresttarget,
+    mb.totalcontributionspaid - mb.activeloanbalance AS estimatedpayout
+FROM vw_member_balances mb
+INNER JOIN motshelogroups mg ON mg.groupid = mb.groupid;
 
 -- ============================================================
--- 14. STORED PROCEDURE: Apply Monthly Loan Interest
--- Run this once per month for each active loan
+-- 14. FUNCTION: Generate Monthly Contributions
 -- ============================================================
-CREATE OR ALTER PROCEDURE sp_ApplyMonthlyLoanInterest
-    @GroupID    INT,
-    @PeriodMonth DATE   -- pass the first day of the month, e.g. '2025-02-01'
-AS
+CREATE OR REPLACE FUNCTION sp_generate_monthly_contributions(p_groupid INT, p_periodmonth DATE)
+RETURNS VOID AS $$
 BEGIN
-    SET NOCOUNT ON;
-    BEGIN TRANSACTION;
-
-    BEGIN TRY
-        -- For every disbursed loan in the group, calculate and record interest
-        INSERT INTO LoanInterestSchedule (LoanID, PeriodMonth, OpeningBalance, InterestCharged, ClosingBalance)
-        SELECT
-            l.LoanID,
-            @PeriodMonth,
-            l.OutstandingBalance                                AS OpeningBalance,
-            ROUND(l.OutstandingBalance * l.InterestRate, 2)    AS InterestCharged,
-            ROUND(l.OutstandingBalance * (1 + l.InterestRate), 2) AS ClosingBalance
-        FROM Loans l
-        WHERE l.GroupID = @GroupID
-          AND l.Status  = 'disbursed'
-          AND NOT EXISTS (
-              SELECT 1 FROM LoanInterestSchedule lis
-              WHERE lis.LoanID = l.LoanID AND lis.PeriodMonth = @PeriodMonth
-          );
-
-        -- Update outstanding balances on the loans
-        UPDATE l
-        SET l.OutstandingBalance = ROUND(l.OutstandingBalance * (1 + l.InterestRate), 2),
-            l.UpdatedAt          = GETDATE()
-        FROM Loans l
-        WHERE l.GroupID = @GroupID
-          AND l.Status  = 'disbursed'
-          AND EXISTS (
-              SELECT 1 FROM LoanInterestSchedule lis
-              WHERE lis.LoanID = l.LoanID AND lis.PeriodMonth = @PeriodMonth
-          );
-
-        COMMIT TRANSACTION;
-        PRINT 'Monthly interest applied successfully for period: ' + CAST(@PeriodMonth AS NVARCHAR);
-    END TRY
-    BEGIN CATCH
-        ROLLBACK TRANSACTION;
-        THROW;
-    END CATCH
-END;
-GO
-
--- ============================================================
--- 15. STORED PROCEDURE: Approve Loan Repayment
--- Called when a signatory approves a repayment
--- Automatically settles loan if balance reaches zero
--- ============================================================
-CREATE OR ALTER PROCEDURE sp_ApproveRepayment
-    @RepaymentID        INT,
-    @SignatoryMemberID  INT,
-    @Decision           NVARCHAR(10),   -- 'approved' | 'rejected'
-    @DecisionNote       NVARCHAR(500) = NULL
-AS
-BEGIN
-    SET NOCOUNT ON;
-    BEGIN TRANSACTION;
-
-    BEGIN TRY
-        -- 1. Record this signatory's decision
-        INSERT INTO RepaymentApprovals (RepaymentID, SignatoryMemberID, Decision, DecisionNote)
-        VALUES (@RepaymentID, @SignatoryMemberID, @Decision, @DecisionNote);
-
-        -- 2. If rejected, mark the repayment as rejected
-        IF @Decision = 'rejected'
-        BEGIN
-            UPDATE LoanRepayments
-            SET Status = 'rejected', UpdatedAt = GETDATE()
-            WHERE RepaymentID = @RepaymentID;
-        END
-
-        -- 3. If both signatories have now approved → apply payment
-        IF @Decision = 'approved'
-        BEGIN
-            DECLARE @ApprovalCount INT;
-            SELECT @ApprovalCount = COUNT(*)
-            FROM RepaymentApprovals
-            WHERE RepaymentID = @RepaymentID AND Decision = 'approved';
-
-            IF @ApprovalCount >= 2
-            BEGIN
-                DECLARE @AmountPaid DECIMAL(10,2), @LoanID INT;
-                SELECT @AmountPaid = AmountPaid, @LoanID = LoanID
-                FROM LoanRepayments WHERE RepaymentID = @RepaymentID;
-
-                -- Mark repayment as approved
-                UPDATE LoanRepayments
-                SET Status = 'approved', UpdatedAt = GETDATE()
-                WHERE RepaymentID = @RepaymentID;
-
-                -- Reduce loan outstanding balance
-                UPDATE Loans
-                SET OutstandingBalance = CASE
-                        WHEN OutstandingBalance - @AmountPaid <= 0 THEN 0
-                        ELSE OutstandingBalance - @AmountPaid
-                    END,
-                    Status = CASE
-                        WHEN OutstandingBalance - @AmountPaid <= 0 THEN 'settled'
-                        ELSE Status
-                    END,
-                    SettledAt = CASE
-                        WHEN OutstandingBalance - @AmountPaid <= 0 THEN GETDATE()
-                        ELSE NULL
-                    END,
-                    UpdatedAt = GETDATE()
-                WHERE LoanID = @LoanID;
-            END
-        END
-
-        COMMIT TRANSACTION;
-    END TRY
-    BEGIN CATCH
-        ROLLBACK TRANSACTION;
-        THROW;
-    END CATCH
-END;
-GO
-
--- ============================================================
--- 16. STORED PROCEDURE: Generate Member Contribution Schedule
--- Auto-creates pending contribution rows for all members
--- for a given month
--- ============================================================
-CREATE OR ALTER PROCEDURE sp_GenerateMonthlyContributions
-    @GroupID        INT,
-    @PeriodMonth    DATE
-AS
-BEGIN
-    SET NOCOUNT ON;
-
-    INSERT INTO MonthlyContributions (GroupID, MemberID, ContributionMonth, AmountDue, Status)
-    SELECT
-        gm.GroupID,
-        gm.MemberID,
-        @PeriodMonth,
-        mg.MonthlyContribution,
-        'pending'
-    FROM GroupMembers gm
-    INNER JOIN MotsheloGroups mg ON mg.GroupID = gm.GroupID
-    WHERE gm.GroupID = @GroupID
-      AND gm.IsActive = 1
+    INSERT INTO monthlycontributions (groupid, memberid, contributionmonth, amountdue, status)
+    SELECT gm.groupid, gm.memberid, p_periodmonth, mg.monthlycontribution, 'pending'
+    FROM groupmembers gm
+    INNER JOIN motshelogroups mg ON mg.groupid = gm.groupid
+    WHERE gm.groupid = p_groupid AND gm.isactive = TRUE
       AND NOT EXISTS (
-          SELECT 1 FROM MonthlyContributions mc
-          WHERE mc.GroupID = @GroupID
-            AND mc.MemberID = gm.MemberID
-            AND mc.ContributionMonth = @PeriodMonth
+          SELECT 1 FROM monthlycontributions mc
+          WHERE mc.groupid = p_groupid
+            AND mc.memberid = gm.memberid
+            AND mc.contributionmonth = p_periodmonth
+      );
+END;
+$$ LANGUAGE plpgsql;
+
+-- ============================================================
+-- 15. FUNCTION: Apply Monthly Loan Interest
+-- ============================================================
+CREATE OR REPLACE FUNCTION sp_apply_monthly_loan_interest(p_groupid INT, p_periodmonth DATE)
+RETURNS VOID AS $$
+BEGIN
+    INSERT INTO loaninterestschedule (loanid, periodmonth, openingbalance, interestcharged, closingbalance)
+    SELECT
+        l.loanid,
+        p_periodmonth,
+        l.outstandingbalance,
+        ROUND(l.outstandingbalance * l.interestrate, 2),
+        ROUND(l.outstandingbalance * (1 + l.interestrate), 2)
+    FROM loans l
+    WHERE l.groupid = p_groupid AND l.status = 'disbursed'
+      AND NOT EXISTS (
+          SELECT 1 FROM loaninterestschedule lis
+          WHERE lis.loanid = l.loanid AND lis.periodmonth = p_periodmonth
       );
 
-    PRINT 'Contribution records generated for ' + CAST(@@ROWCOUNT AS NVARCHAR) + ' members.';
+    UPDATE loans
+    SET outstandingbalance = ROUND(outstandingbalance * (1 + interestrate), 2),
+        updatedat          = NOW()
+    WHERE groupid = p_groupid AND status = 'disbursed'
+      AND EXISTS (
+          SELECT 1 FROM loaninterestschedule lis
+          WHERE lis.loanid = loans.loanid AND lis.periodmonth = p_periodmonth
+      );
 END;
-GO
+$$ LANGUAGE plpgsql;
 
 -- ============================================================
--- 17. INDEXES FOR PERFORMANCE
+-- 16. FUNCTION: Approve Loan Repayment
 -- ============================================================
-CREATE INDEX IX_GroupMembers_GroupID   ON GroupMembers(GroupID);
-CREATE INDEX IX_GroupMembers_UserID    ON GroupMembers(UserID);
+CREATE OR REPLACE FUNCTION sp_approve_repayment(
+    p_repaymentid       INT,
+    p_signatorymemberid INT,
+    p_decision          VARCHAR(10),
+    p_decisionnote      VARCHAR(500) DEFAULT NULL
+)
+RETURNS VOID AS $$
+DECLARE
+    v_approvalcount INT;
+    v_amountpaid    NUMERIC(10,2);
+    v_loanid        INT;
+BEGIN
+    INSERT INTO repaymentapprovals (repaymentid, signatorymemberid, decision, decisionnote)
+    VALUES (p_repaymentid, p_signatorymemberid, p_decision, p_decisionnote);
 
-CREATE INDEX IX_Contributions_GroupID  ON MonthlyContributions(GroupID);
-CREATE INDEX IX_Contributions_MemberID ON MonthlyContributions(MemberID);
-CREATE INDEX IX_Contributions_Month    ON MonthlyContributions(ContributionMonth);
-CREATE INDEX IX_Contributions_Status   ON MonthlyContributions(Status);
+    IF p_decision = 'rejected' THEN
+        UPDATE loanrepayments SET status = 'rejected', updatedat = NOW()
+        WHERE repaymentid = p_repaymentid;
+        RETURN;
+    END IF;
 
-CREATE INDEX IX_Loans_GroupID          ON Loans(GroupID);
-CREATE INDEX IX_Loans_BorrowerMemberID ON Loans(BorrowerMemberID);
-CREATE INDEX IX_Loans_Status           ON Loans(Status);
+    IF p_decision = 'approved' THEN
+        SELECT COUNT(*) INTO v_approvalcount
+        FROM repaymentapprovals
+        WHERE repaymentid = p_repaymentid AND decision = 'approved';
 
-CREATE INDEX IX_LoanRepayments_LoanID  ON LoanRepayments(LoanID);
-CREATE INDEX IX_LoanRepayments_Status  ON LoanRepayments(Status);
+        IF v_approvalcount >= 2 THEN
+            SELECT amountpaid, loanid INTO v_amountpaid, v_loanid
+            FROM loanrepayments WHERE repaymentid = p_repaymentid;
 
-CREATE INDEX IX_InterestSchedule_LoanID ON LoanInterestSchedule(LoanID);
-CREATE INDEX IX_InterestSchedule_Month  ON LoanInterestSchedule(PeriodMonth);
-GO
+            UPDATE loanrepayments SET status = 'approved', updatedat = NOW()
+            WHERE repaymentid = p_repaymentid;
+
+            UPDATE loans
+            SET outstandingbalance = GREATEST(outstandingbalance - v_amountpaid, 0),
+                status    = CASE WHEN outstandingbalance - v_amountpaid <= 0 THEN 'settled' ELSE status END,
+                settledat = CASE WHEN outstandingbalance - v_amountpaid <= 0 THEN NOW() ELSE NULL END,
+                updatedat = NOW()
+            WHERE loanid = v_loanid;
+        END IF;
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
 
 -- ============================================================
--- 18. SAMPLE SEED DATA (for development & testing)
+-- 17. INDEXES
 -- ============================================================
+CREATE INDEX ix_groupmembers_groupid    ON groupmembers(groupid);
+CREATE INDEX ix_groupmembers_userid     ON groupmembers(userid);
+CREATE INDEX ix_contributions_groupid   ON monthlycontributions(groupid);
+CREATE INDEX ix_contributions_memberid  ON monthlycontributions(memberid);
+CREATE INDEX ix_contributions_month     ON monthlycontributions(contributionmonth);
+CREATE INDEX ix_contributions_status    ON monthlycontributions(status);
+CREATE INDEX ix_loans_groupid           ON loans(groupid);
+CREATE INDEX ix_loans_borrowermemberid  ON loans(borrowermemberid);
+CREATE INDEX ix_loans_status            ON loans(status);
+CREATE INDEX ix_loanrepayments_loanid   ON loanrepayments(loanid);
+CREATE INDEX ix_loanrepayments_status   ON loanrepayments(status);
+CREATE INDEX ix_interestschedule_loanid ON loaninterestschedule(loanid);
+CREATE INDEX ix_interestschedule_month  ON loaninterestschedule(periodmonth);
 
--- Users (passwords here are placeholders — hash before inserting in app)
-INSERT INTO Users (FirstName, LastName, Email, PhoneNumber, PasswordHash, NationalID)
-VALUES
-    ('Kagiso',   'Molefe',  'kagiso@remmogo.bw',  '+26771234567', '$2b$12$placeholder_hash_1', '123456789'),
-    ('Naledi',   'Dikgang', 'naledi@remmogo.bw',  '+26772345678', '$2b$12$placeholder_hash_2', '234567890'),
-    ('Thabo',    'Sithole', 'thabo@remmogo.bw',   '+26773456789', '$2b$12$placeholder_hash_3', '345678901'),
-    ('Keitumetse','Tau',    'keitu@remmogo.bw',   '+26774567890', '$2b$12$placeholder_hash_4', '456789012'),
-    ('Mpho',     'Kgosi',   'mpho@remmogo.bw',    '+26775678901', '$2b$12$placeholder_hash_5', '567890123');
-GO
+-- ============================================================
+-- 18. SEED DATA
+-- All 5 test users share the password: Password123
+-- ============================================================
+INSERT INTO users (firstname, lastname, email, phonenumber, passwordhash, nationalid) VALUES
+    ('Kagiso',     'Molefe',  'kagiso@remmogo.bw', '+26771234567', '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '123456789'),
+    ('Naledi',     'Dikgang', 'naledi@remmogo.bw', '+26772345678', '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '234567890'),
+    ('Thabo',      'Sithole', 'thabo@remmogo.bw',  '+26773456789', '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '345678901'),
+    ('Keitumetse', 'Tau',     'keitu@remmogo.bw',  '+26774567890', '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '456789012'),
+    ('Mpho',       'Kgosi',   'mpho@remmogo.bw',   '+26775678901', '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '567890123');
 
--- Motshelo Group
-INSERT INTO MotsheloGroups (GroupName, Description, MonthlyContribution, RequiredInterest, LoanInterestRate, YearStartDate, YearEndDate)
+INSERT INTO motshelogroups (groupname, description, monthlycontribution, requiredinterest, loaninterestrate, yearstartdate, yearenddate)
 VALUES ('Kopano Savings Group', 'Gaborone neighbourhood motshelo group 2025', 1000.00, 5000.00, 0.20, '2025-01-01', '2025-12-31');
-GO
 
--- Enrol members (first two are signatories)
-INSERT INTO GroupMembers (GroupID, UserID, Role, JoinDate)
-VALUES
+INSERT INTO groupmembers (groupid, userid, role, joindate) VALUES
     (1, 1, 'signatory', '2025-01-01'),
     (1, 2, 'signatory', '2025-01-01'),
     (1, 3, 'member',    '2025-01-01'),
     (1, 4, 'member',    '2025-01-01'),
     (1, 5, 'member',    '2025-01-01');
-GO
 
--- Assign signatories
-INSERT INTO GroupSignatories (GroupID, MemberID)
-VALUES (1, 1), (1, 2);
-GO
+INSERT INTO groupsignatories (groupid, memberid) VALUES (1, 1), (1, 2);
 
--- Generate January 2025 contributions for all members
-EXEC sp_GenerateMonthlyContributions @GroupID = 1, @PeriodMonth = '2025-01-01';
-GO
+SELECT sp_generate_monthly_contributions(1, '2025-01-01');
+SELECT sp_generate_monthly_contributions(1, '2025-02-01');
+SELECT sp_generate_monthly_contributions(1, '2025-03-01');
 
 -- ============================================================
--- SCHEMA SUMMARY
--- ============================================================
--- Tables:
---   Users                    - System accounts
---   MotsheloGroups           - Savings circles
---   GroupMembers             - Membership & roles
---   GroupSignatories         - The two approvers
---   MonthlyContributions     - P1000/month per member
---   ContributionApprovals    - Signatory sign-off on payments
---   Loans                    - Borrowing records
---   LoanApprovals            - Both signatories must approve
---   LoanRepayments           - Member repayment submissions
---   RepaymentApprovals       - Signatory sign-off on repayments
---   LoanInterestSchedule     - 20% monthly interest accrual log
---
--- Views:
---   vw_MemberBalances        - Per-member running totals
---   vw_YearEndReport         - Year-end payout calculation
---
--- Stored Procedures:
---   sp_ApplyMonthlyLoanInterest     - Accrue 20% interest monthly
---   sp_ApproveRepayment             - Dual-signatory repayment flow
---   sp_GenerateMonthlyContributions - Auto-create monthly rows
+-- DONE. Database is ready.
 -- ============================================================
