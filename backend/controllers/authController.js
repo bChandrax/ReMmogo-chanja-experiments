@@ -1,4 +1,4 @@
-const { sql } = require("../config/db");
+const { db } = require("../config/db");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
@@ -15,24 +15,27 @@ exports.register = async (req, res) => {
   }
 
   try {
-    const checkUser = await sql.query`SELECT * FROM Users WHERE Email = ${email}`;
-
-    if (checkUser.recordset.length > 0) {
+    const checkUser = await db.query("SELECT * FROM users WHERE email = $1", [email]);
+    if (checkUser.rows.length > 0) {
       return res.status(400).json({ error: "User already exists" });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const result = await sql.query`
-      INSERT INTO Users (FirstName, LastName, Email, PhoneNumber, PasswordHash, NationalID)
-      OUTPUT INSERTED.UserID, INSERTED.FirstName, INSERTED.LastName, INSERTED.Email
-      VALUES (${firstName}, ${lastName}, ${email}, ${phoneNumber || null}, ${hashedPassword}, ${nationalID || null})
-    `;
+    const result = await db.query(
+      `INSERT INTO users (firstname, lastname, email, phonenumber, passwordhash, nationalid)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING userid, firstname, lastname, email`,
+      [firstName, lastName, email, phoneNumber || null, hashedPassword, nationalID || null]
+    );
 
-    const user = result.recordset[0];
-    const token = jwt.sign({ id: user.UserID, email: user.Email }, process.env.JWT_SECRET, { expiresIn: "1d" });
+    const user = result.rows[0];
+    const token = jwt.sign({ id: user.userid, email: user.email }, process.env.JWT_SECRET, { expiresIn: "1d" });
 
-    res.status(201).json({ token, user: { id: user.UserID, firstName: user.FirstName, lastName: user.LastName, email: user.Email } });
+    res.status(201).json({
+      token,
+      user: { id: user.userid, firstName: user.firstname, lastName: user.lastname, email: user.email },
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -47,17 +50,20 @@ exports.login = async (req, res) => {
   }
 
   try {
-    const result = await sql.query`SELECT * FROM Users WHERE Email = ${email} AND IsActive = 1`;
-    const user = result.recordset[0];
+    const result = await db.query("SELECT * FROM users WHERE email = $1 AND isactive = true", [email]);
+    const user = result.rows[0];
 
     if (!user) return res.status(400).json({ error: "Invalid credentials" });
 
-    const isMatch = await bcrypt.compare(password, user.PasswordHash);
+    const isMatch = await bcrypt.compare(password, user.passwordhash);
     if (!isMatch) return res.status(400).json({ error: "Invalid credentials" });
 
-    const token = jwt.sign({ id: user.UserID, email: user.Email }, process.env.JWT_SECRET, { expiresIn: "1d" });
+    const token = jwt.sign({ id: user.userid, email: user.email }, process.env.JWT_SECRET, { expiresIn: "1d" });
 
-    res.json({ token, user: { id: user.UserID, firstName: user.FirstName, lastName: user.LastName, email: user.Email } });
+    res.json({
+      token,
+      user: { id: user.userid, firstName: user.firstname, lastName: user.lastname, email: user.email },
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -66,12 +72,12 @@ exports.login = async (req, res) => {
 // GET CURRENT USER PROFILE
 exports.getProfile = async (req, res) => {
   try {
-    const result = await sql.query`
-      SELECT UserID, FirstName, LastName, Email, PhoneNumber, NationalID, CreatedAt
-      FROM Users WHERE UserID = ${req.user.id}
-    `;
-    if (result.recordset.length === 0) return res.status(404).json({ error: "User not found" });
-    res.json(result.recordset[0]);
+    const result = await db.query(
+      "SELECT userid, firstname, lastname, email, phonenumber, nationalid, createdat FROM users WHERE userid = $1",
+      [req.user.id]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ error: "User not found" });
+    res.json(result.rows[0]);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

@@ -16,25 +16,23 @@ const protect = (req, res, next) => {
   });
 };
 
-// Middleware to check if user is a signatory of a group
 const requireSignatory = async (req, res, next) => {
-  const { sql } = require("../config/db");
+  const { db } = require("../config/db");
   const groupId = req.params.groupId || req.body.groupId;
 
   try {
-    const result = await sql.query`
-      SELECT gm.MemberID FROM GroupMembers gm
-      WHERE gm.UserID = ${req.user.id}
-        AND gm.GroupID = ${groupId}
-        AND gm.Role IN ('signatory', 'admin')
-        AND gm.IsActive = 1
-    `;
+    const result = await db.query(
+      `SELECT gm.memberid FROM groupmembers gm
+       WHERE gm.userid = $1 AND gm.groupid = $2
+         AND gm.role IN ('signatory', 'admin') AND gm.isactive = true`,
+      [req.user.id, groupId]
+    );
 
-    if (result.recordset.length === 0) {
+    if (result.rows.length === 0) {
       return res.status(403).json({ error: "Signatory access required" });
     }
 
-    req.memberID = result.recordset[0].MemberID;
+    req.memberID = result.rows[0].memberid;
     next();
   } catch (err) {
     res.status(500).json({ error: err.message });

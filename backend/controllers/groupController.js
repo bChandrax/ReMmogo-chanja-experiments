@@ -1,4 +1,4 @@
-const { sql } = require("../config/db");
+const { db } = require("../config/db");
 
 // CREATE GROUP
 exports.createGroup = async (req, res) => {
@@ -9,27 +9,28 @@ exports.createGroup = async (req, res) => {
   }
 
   try {
-    const result = await sql.query`
-      INSERT INTO MotsheloGroups (GroupName, Description, MonthlyContribution, RequiredInterest, LoanInterestRate, YearStartDate, YearEndDate)
-      OUTPUT INSERTED.*
-      VALUES (
-        ${groupName},
-        ${description || null},
-        ${monthlyContribution || 1000.00},
-        ${requiredInterest || 5000.00},
-        ${loanInterestRate || 0.20},
-        ${yearStartDate},
-        ${yearEndDate}
-      )
-    `;
+    const result = await db.query(
+      `INSERT INTO motshelogroups (groupname, description, monthlycontribution, requiredinterest, loaninterestrate, yearstartdate, yearenddate)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       RETURNING *`,
+      [
+        groupName,
+        description || null,
+        monthlyContribution || 1000.00,
+        requiredInterest || 5000.00,
+        loanInterestRate || 0.20,
+        yearStartDate,
+        yearEndDate,
+      ]
+    );
 
-    const group = result.recordset[0];
+    const group = result.rows[0];
 
     // Auto-enroll creator as admin
-    await sql.query`
-      INSERT INTO GroupMembers (GroupID, UserID, Role, JoinDate)
-      VALUES (${group.GroupID}, ${req.user.id}, 'admin', CAST(GETDATE() AS DATE))
-    `;
+    await db.query(
+      `INSERT INTO groupmembers (groupid, userid, role, joindate) VALUES ($1, $2, 'admin', CURRENT_DATE)`,
+      [group.groupid, req.user.id]
+    );
 
     res.status(201).json(group);
   } catch (err) {
@@ -37,16 +38,17 @@ exports.createGroup = async (req, res) => {
   }
 };
 
-// GET ALL GROUPS (that the user belongs to)
+// GET GROUPS THE USER BELONGS TO
 exports.getMyGroups = async (req, res) => {
   try {
-    const result = await sql.query`
-      SELECT mg.*, gm.Role, gm.MemberID
-      FROM MotsheloGroups mg
-      INNER JOIN GroupMembers gm ON gm.GroupID = mg.GroupID
-      WHERE gm.UserID = ${req.user.id} AND gm.IsActive = 1 AND mg.IsActive = 1
-    `;
-    res.json(result.recordset);
+    const result = await db.query(
+      `SELECT mg.*, gm.role, gm.memberid
+       FROM motshelogroups mg
+       INNER JOIN groupmembers gm ON gm.groupid = mg.groupid
+       WHERE gm.userid = $1 AND gm.isactive = true AND mg.isactive = true`,
+      [req.user.id]
+    );
+    res.json(result.rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -55,11 +57,11 @@ exports.getMyGroups = async (req, res) => {
 // GET ALL GROUPS (public listing)
 exports.getAllGroups = async (req, res) => {
   try {
-    const result = await sql.query`
-      SELECT GroupID, GroupName, Description, MonthlyContribution, YearStartDate, YearEndDate, CreatedAt
-      FROM MotsheloGroups WHERE IsActive = 1
-    `;
-    res.json(result.recordset);
+    const result = await db.query(
+      `SELECT groupid, groupname, description, monthlycontribution, yearstartdate, yearenddate, createdat
+       FROM motshelogroups WHERE isactive = true`
+    );
+    res.json(result.rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -69,40 +71,40 @@ exports.getAllGroups = async (req, res) => {
 exports.getGroup = async (req, res) => {
   const { groupId } = req.params;
   try {
-    const result = await sql.query`
-      SELECT mg.*,
-        (SELECT COUNT(*) FROM GroupMembers WHERE GroupID = mg.GroupID AND IsActive = 1) AS MemberCount
-      FROM MotsheloGroups mg
-      WHERE mg.GroupID = ${groupId} AND mg.IsActive = 1
-    `;
-    if (result.recordset.length === 0) return res.status(404).json({ error: "Group not found" });
-    res.json(result.recordset[0]);
+    const result = await db.query(
+      `SELECT mg.*,
+         (SELECT COUNT(*) FROM groupmembers WHERE groupid = mg.groupid AND isactive = true) AS membercount
+       FROM motshelogroups mg
+       WHERE mg.groupid = $1 AND mg.isactive = true`,
+      [groupId]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ error: "Group not found" });
+    res.json(result.rows[0]);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
-// UPDATE GROUP
+// UPDATE GROUP (admin only)
 exports.updateGroup = async (req, res) => {
   const { groupId } = req.params;
   const { groupName, description } = req.body;
 
   try {
     // FIX 3: Only group admins can update group details
-    const adminCheck = await sql.query`
-      SELECT MemberID FROM GroupMembers
-      WHERE GroupID = ${groupId} AND UserID = ${req.user.id}
-        AND Role = 'admin' AND IsActive = 1
-    `;
-    if (adminCheck.recordset.length === 0) {
+    const adminCheck = await db.query(
+      `SELECT memberid FROM groupmembers
+       WHERE groupid = $1 AND userid = $2 AND role = 'admin' AND isactive = true`,
+      [groupId, req.user.id]
+    );
+    if (adminCheck.rows.length === 0) {
       return res.status(403).json({ error: "Only group admins can update group details" });
     }
 
-    await sql.query`
-      UPDATE MotsheloGroups
-      SET GroupName = ${groupName}, Description = ${description}, UpdatedAt = GETDATE()
-      WHERE GroupID = ${groupId}
-    `;
+    await db.query(
+      `UPDATE motshelogroups SET groupname = $1, description = $2, updatedat = NOW() WHERE groupid = $3`,
+      [groupName, description, groupId]
+    );
     res.json({ message: "Group updated successfully" });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -112,12 +114,12 @@ exports.updateGroup = async (req, res) => {
 // GENERATE MONTHLY CONTRIBUTIONS for a group
 exports.generateContributions = async (req, res) => {
   const { groupId } = req.params;
-  const { periodMonth } = req.body; // e.g. "2025-03-01"
+  const { periodMonth } = req.body;
 
   if (!periodMonth) return res.status(400).json({ error: "periodMonth is required (YYYY-MM-DD)" });
 
   try {
-    await sql.query`EXEC sp_GenerateMonthlyContributions @GroupID = ${groupId}, @PeriodMonth = ${periodMonth}`;
+    await db.query("SELECT sp_generate_monthly_contributions($1, $2)", [groupId, periodMonth]);
     res.json({ message: `Contributions generated for ${periodMonth}` });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -132,7 +134,7 @@ exports.applyMonthlyInterest = async (req, res) => {
   if (!periodMonth) return res.status(400).json({ error: "periodMonth is required (YYYY-MM-DD)" });
 
   try {
-    await sql.query`EXEC sp_ApplyMonthlyLoanInterest @GroupID = ${groupId}, @PeriodMonth = ${periodMonth}`;
+    await db.query("SELECT sp_apply_monthly_loan_interest($1, $2)", [groupId, periodMonth]);
     res.json({ message: `Monthly interest applied for ${periodMonth}` });
   } catch (err) {
     res.status(500).json({ error: err.message });
