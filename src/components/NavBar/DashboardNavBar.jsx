@@ -1,5 +1,6 @@
 import { Search } from "lucide-react";
 import { Bell, PlusIcon } from "lucide-react";
+import "./DashboardNavBar.css";
 
 export default function DashboardNavBar() {
   return(

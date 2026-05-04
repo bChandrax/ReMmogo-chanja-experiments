@@ -155,6 +155,7 @@ export default function MessagesPage() {
             <div className="conversations-search">
               <Search size={18} />
               <input
+                className="convo-search"
                 type="text"
                 placeholder="Search conversations..."
                 value={searchQuery}
@@ -253,6 +254,7 @@ export default function MessagesPage() {
                     <Paperclip size={20} />
                   </button>
                   <input
+                    className="msg-box"
                     type="text"
                     placeholder="Type your message..."
                     value={newMessage}

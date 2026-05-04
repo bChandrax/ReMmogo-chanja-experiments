@@ -234,9 +234,9 @@
   color: #2c3e1f;
 }
 
-.input-field input {
+.input-field .inner-form-input {
   flex: 1;
-  border: none;
+  border-color: transparent;
   outline: none;
   background: transparent;
   padding: 13px 16px;
@@ -245,12 +245,7 @@
   min-width: 0;
 }
 
-.input-field input:focus {
-  outline: none;
-  box-shadow: none;
-}
-
-.input-field input::placeholder {
+.input-field .inner-form-input::placeholder {
   color: #888;
 }
 

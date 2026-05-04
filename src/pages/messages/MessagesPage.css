@@ -57,7 +57,7 @@
   flex-shrink: 0;
 }
 
-.conversations-search input {
+.conversations-search .convo-search {
   flex: 1;
   border: none;
   background: transparent;
@@ -66,7 +66,7 @@
   outline: none;
 }
 
-.conversations-search input::placeholder {
+.conversations-search .convo-search::placeholder {
   color: #888;
 }
 
@@ -421,7 +421,7 @@
   color: #1a1a18;
 }
 
-.chat-input-form input {
+.chat-input-form .msg-box {
   flex: 1;
   padding: 14px 20px;
   border: 1px solid #e8e4dc;
@@ -433,13 +433,13 @@
   transition: all 0.2s;
 }
 
-.chat-input-form input:focus {
+.chat-input-form .msg-box:focus {
   border-color: #2c3e1f;
   background: #fff;
   box-shadow: 0 0 0 3px rgba(44, 62, 31, 0.08);
 }
 
-.chat-input-form input::placeholder {
+.chat-input-form .msg-box::placeholder {
   color: #888;
 }
 
