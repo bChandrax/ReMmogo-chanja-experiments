@@ -1,86 +1,42 @@
-const { db } = require("../config/db");
+const jwt = require("jsonwebtoken");
 
-// YEAR-END REPORT FOR A GROUP
-exports.getYearEndReport = async (req, res) => {
-  const { groupId } = req.params;
+const protect = (req, res, next) => {
+  const bearer = req.headers.authorization;
+
+  if (!bearer || !bearer.startsWith("Bearer ")) {
+    return res.status(401).json({ error: "No token provided" });
+  }
+
+  const token = bearer.split(" ")[1];
+
+  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+    if (err) return res.status(403).json({ error: "Invalid or expired token" });
+    req.user = decoded;
+    next();
+  });
+};
+
+const requireSignatory = async (req, res, next) => {
+  const { db } = require("../config/db");
+  const groupId = req.params.groupId || req.body.groupId;
+
   try {
     const result = await db.query(
-      "SELECT * FROM vw_year_end_report WHERE groupid = $1 ORDER BY membername",
-      [groupId]
+      `SELECT gm.memberid FROM groupmembers gm
+       WHERE gm.userid = $1 AND gm.groupid = $2
+         AND gm.role IN ('signatory', 'admin') AND gm.isactive = true`,
+      [req.user.id, groupId]
     );
-    res.json(result.rows);
+
+    if (result.rows.length === 0) {
+      return res.status(403).json({ error: "Signatory access required" });
+    }
+
+    req.memberID = result.rows[0].memberid;
+    next();
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
-// GROUP SUMMARY STATS
-exports.getGroupSummary = async (req, res) => {
-  const { groupId } = req.params;
-  try {
-    const members = await db.query(
-      "SELECT COUNT(*) AS totalmembers FROM groupmembers WHERE groupid = $1 AND isactive = true",
-      [groupId]
-    );
-
-    const contributions = await db.query(
-      `SELECT
-         SUM(CASE WHEN status = 'approved' THEN amountpaid ELSE 0 END) AS totalcollected,
-         SUM(CASE WHEN status = 'pending' THEN amountdue ELSE 0 END) AS totalpending,
-         COUNT(CASE WHEN status = 'submitted' THEN 1 END) AS pendingapprovals
-       FROM monthlycontributions WHERE groupid = $1`,
-      [groupId]
-    );
-
-    const loans = await db.query(
-      `SELECT
-         COUNT(CASE WHEN status = 'pending_approval' THEN 1 END) AS pendingloans,
-         COUNT(CASE WHEN status = 'disbursed' THEN 1 END) AS activeloans,
-         SUM(CASE WHEN status = 'disbursed' THEN outstandingbalance ELSE 0 END) AS totaloutstanding,
-         SUM(CASE WHEN status = 'settled' THEN principalamount ELSE 0 END) AS totalsettled
-       FROM loans WHERE groupid = $1`,
-      [groupId]
-    );
-
-    res.json({
-      members: members.rows[0],
-      contributions: contributions.rows[0],
-      loans: loans.rows[0],
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
-// MEMBER STATEMENT
-exports.getMemberStatement = async (req, res) => {
-  const { groupId, memberId } = req.params;
-  try {
-    const balance = await db.query(
-      "SELECT * FROM vw_member_balances WHERE groupid = $1 AND memberid = $2",
-      [groupId, memberId]
-    );
-
-    const contributions = await db.query(
-      "SELECT * FROM monthlycontributions WHERE groupid = $1 AND memberid = $2 ORDER BY contributionmonth DESC",
-      [groupId, memberId]
-    );
-
-    const loans = await db.query(
-      `SELECT l.*, lis.interestcharged
-       FROM loans l
-       LEFT JOIN loaninterestschedule lis ON lis.loanid = l.loanid
-       WHERE l.groupid = $1 AND l.borrowermemberid = $2
-       ORDER BY l.requestedat DESC`,
-      [groupId, memberId]
-    );
-
-    res.json({
-      balance: balance.rows[0],
-      contributions: contributions.rows,
-      loans: loans.rows,
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
+module.exports = { protect, requireSignatory };
