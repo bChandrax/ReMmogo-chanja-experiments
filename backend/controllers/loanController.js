@@ -1,4 +1,4 @@
-const { sql } = require("../config/db");
+const { db } = require("../config/db");
 
 // REQUEST A LOAN
 exports.requestLoan = async (req, res) => {
@@ -9,28 +9,27 @@ exports.requestLoan = async (req, res) => {
   }
 
   try {
-    // Get borrower's MemberID
-    const memberCheck = await sql.query`
-      SELECT MemberID FROM GroupMembers
-      WHERE UserID = ${req.user.id} AND GroupID = ${groupId} AND IsActive = 1
-    `;
-    if (memberCheck.recordset.length === 0) return res.status(403).json({ error: "You are not a member of this group" });
+    const memberCheck = await db.query(
+      "SELECT memberid FROM groupmembers WHERE userid = $1 AND groupid = $2 AND isactive = true",
+      [req.user.id, groupId]
+    );
+    if (memberCheck.rows.length === 0) return res.status(403).json({ error: "You are not a member of this group" });
 
-    const borrowerMemberID = memberCheck.recordset[0].MemberID;
+    const borrowerMemberID = memberCheck.rows[0].memberid;
 
-    // Get group interest rate
-    const groupCheck = await sql.query`
-      SELECT LoanInterestRate FROM MotsheloGroups WHERE GroupID = ${groupId}
-    `;
-    const interestRate = groupCheck.recordset[0].LoanInterestRate;
+    const groupCheck = await db.query(
+      "SELECT loaninterestrate FROM motshelogroups WHERE groupid = $1",
+      [groupId]
+    );
+    const interestRate = groupCheck.rows[0].loaninterestrate;
 
-    const result = await sql.query`
-      INSERT INTO Loans (GroupID, BorrowerMemberID, PrincipalAmount, InterestRate, OutstandingBalance, Notes)
-      OUTPUT INSERTED.*
-      VALUES (${groupId}, ${borrowerMemberID}, ${principalAmount}, ${interestRate}, ${principalAmount}, ${notes || null})
-    `;
+    const result = await db.query(
+      `INSERT INTO loans (groupid, borrowermemberid, principalamount, interestrate, outstandingbalance, notes)
+       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+      [groupId, borrowerMemberID, principalAmount, interestRate, principalAmount, notes || null]
+    );
 
-    res.status(201).json({ message: "Loan request submitted. Awaiting signatory approval.", loan: result.recordset[0] });
+    res.status(201).json({ message: "Loan request submitted. Awaiting signatory approval.", loan: result.rows[0] });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -44,25 +43,27 @@ exports.getGroupLoans = async (req, res) => {
   try {
     let result;
     if (status) {
-      result = await sql.query`
-        SELECT l.*, u.FirstName + ' ' + u.LastName AS BorrowerName
-        FROM Loans l
-        INNER JOIN GroupMembers gm ON gm.MemberID = l.BorrowerMemberID
-        INNER JOIN Users u ON u.UserID = gm.UserID
-        WHERE l.GroupID = ${groupId} AND l.Status = ${status}
-        ORDER BY l.RequestedAt DESC
-      `;
+      result = await db.query(
+        `SELECT l.*, u.firstname || ' ' || u.lastname AS borrowername
+         FROM loans l
+         INNER JOIN groupmembers gm ON gm.memberid = l.borrowermemberid
+         INNER JOIN users u ON u.userid = gm.userid
+         WHERE l.groupid = $1 AND l.status = $2
+         ORDER BY l.requestedat DESC`,
+        [groupId, status]
+      );
     } else {
-      result = await sql.query`
-        SELECT l.*, u.FirstName + ' ' + u.LastName AS BorrowerName
-        FROM Loans l
-        INNER JOIN GroupMembers gm ON gm.MemberID = l.BorrowerMemberID
-        INNER JOIN Users u ON u.UserID = gm.UserID
-        WHERE l.GroupID = ${groupId}
-        ORDER BY l.RequestedAt DESC
-      `;
+      result = await db.query(
+        `SELECT l.*, u.firstname || ' ' || u.lastname AS borrowername
+         FROM loans l
+         INNER JOIN groupmembers gm ON gm.memberid = l.borrowermemberid
+         INNER JOIN users u ON u.userid = gm.userid
+         WHERE l.groupid = $1
+         ORDER BY l.requestedat DESC`,
+        [groupId]
+      );
     }
-    res.json(result.recordset);
+    res.json(result.rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -72,14 +73,15 @@ exports.getGroupLoans = async (req, res) => {
 exports.getMyLoans = async (req, res) => {
   const { groupId } = req.params;
   try {
-    const result = await sql.query`
-      SELECT l.*
-      FROM Loans l
-      INNER JOIN GroupMembers gm ON gm.MemberID = l.BorrowerMemberID
-      WHERE gm.UserID = ${req.user.id} AND l.GroupID = ${groupId}
-      ORDER BY l.RequestedAt DESC
-    `;
-    res.json(result.recordset);
+    const result = await db.query(
+      `SELECT l.*
+       FROM loans l
+       INNER JOIN groupmembers gm ON gm.memberid = l.borrowermemberid
+       WHERE gm.userid = $1 AND l.groupid = $2
+       ORDER BY l.requestedat DESC`,
+      [req.user.id, groupId]
+    );
+    res.json(result.rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -95,61 +97,61 @@ exports.approveLoan = async (req, res) => {
   }
 
   try {
-    // Verify signatory
-    const sigCheck = await sql.query`
-      SELECT MemberID FROM GroupMembers
-      WHERE UserID = ${req.user.id} AND GroupID = ${groupId}
-        AND Role IN ('signatory', 'admin') AND IsActive = 1
-    `;
-    if (sigCheck.recordset.length === 0) return res.status(403).json({ error: "Signatory access required" });
+    const sigCheck = await db.query(
+      `SELECT memberid FROM groupmembers
+       WHERE userid = $1 AND groupid = $2 AND role IN ('signatory', 'admin') AND isactive = true`,
+      [req.user.id, groupId]
+    );
+    if (sigCheck.rows.length === 0) return res.status(403).json({ error: "Signatory access required" });
 
-    const signatoryMemberID = sigCheck.recordset[0].MemberID;
+    const signatoryMemberID = sigCheck.rows[0].memberid;
 
-    // Check loan status
-    const loanCheck = await sql.query`SELECT Status, BorrowerMemberID FROM Loans WHERE LoanID = ${loanId}`;
-    if (!["pending_approval", "approved"].includes(loanCheck.recordset[0].Status)) {
+    const loanCheck = await db.query(
+      "SELECT status, borrowermemberid FROM loans WHERE loanid = $1",
+      [loanId]
+    );
+    if (!["pending_approval", "approved"].includes(loanCheck.rows[0].status)) {
       return res.status(400).json({ error: "Loan is not pending approval" });
     }
 
-    // FIX 1: Prevent signatory from approving their own loan
-    if (loanCheck.recordset[0].BorrowerMemberID === signatoryMemberID) {
+    // FIX 1: Cannot approve own loan
+    if (loanCheck.rows[0].borrowermemberid === signatoryMemberID) {
       return res.status(403).json({ error: "You cannot approve your own loan" });
     }
 
-    // FIX 2: Prevent the same signatory from approving twice
-    const alreadyApproved = await sql.query`
-      SELECT 1 AS approved FROM LoanApprovals
-      WHERE LoanID = ${loanId} AND SignatoryMemberID = ${signatoryMemberID}
-    `;
-    if (alreadyApproved.recordset.length > 0) {
+    // FIX 2: Cannot approve twice
+    const alreadyApproved = await db.query(
+      "SELECT 1 FROM loanapprovals WHERE loanid = $1 AND signatorymemberid = $2",
+      [loanId, signatoryMemberID]
+    );
+    if (alreadyApproved.rows.length > 0) {
       return res.status(400).json({ error: "You have already approved this loan" });
     }
 
-    // Record decision
-    await sql.query`
-      INSERT INTO LoanApprovals (LoanID, SignatoryMemberID, Decision, DecisionNote)
-      VALUES (${loanId}, ${signatoryMemberID}, ${decision}, ${decisionNote || null})
-    `;
+    await db.query(
+      "INSERT INTO loanapprovals (loanid, signatorymemberid, decision, decisionnote) VALUES ($1, $2, $3, $4)",
+      [loanId, signatoryMemberID, decision, decisionNote || null]
+    );
 
     if (decision === "rejected") {
-      await sql.query`UPDATE Loans SET Status = 'rejected', UpdatedAt = GETDATE() WHERE LoanID = ${loanId}`;
+      await db.query("UPDATE loans SET status = 'rejected', updatedat = NOW() WHERE loanid = $1", [loanId]);
       return res.json({ message: "Loan rejected" });
     }
 
-    // Check if both signatories approved
-    const approvalCount = await sql.query`
-      SELECT COUNT(*) AS cnt FROM LoanApprovals WHERE LoanID = ${loanId} AND Decision = 'approved'
-    `;
+    const approvalCount = await db.query(
+      "SELECT COUNT(*) AS cnt FROM loanapprovals WHERE loanid = $1 AND decision = 'approved'",
+      [loanId]
+    );
 
-    if (approvalCount.recordset[0].cnt >= 2) {
-      await sql.query`
-        UPDATE Loans SET Status = 'disbursed', DisbursedAt = GETDATE(), UpdatedAt = GETDATE()
-        WHERE LoanID = ${loanId}
-      `;
+    if (parseInt(approvalCount.rows[0].cnt) >= 2) {
+      await db.query(
+        "UPDATE loans SET status = 'disbursed', disbursedat = NOW(), updatedat = NOW() WHERE loanid = $1",
+        [loanId]
+      );
       return res.json({ message: "Both signatories approved. Loan disbursed!" });
     }
 
-    await sql.query`UPDATE Loans SET Status = 'approved', UpdatedAt = GETDATE() WHERE LoanID = ${loanId}`;
+    await db.query("UPDATE loans SET status = 'approved', updatedat = NOW() WHERE loanid = $1", [loanId]);
     res.json({ message: "Your approval recorded. Waiting for second signatory." });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -166,31 +168,31 @@ exports.submitRepayment = async (req, res) => {
   }
 
   try {
-    // Verify loan belongs to current user
-    const loanCheck = await sql.query`
-      SELECT l.LoanID, l.Status, gm.UserID
-      FROM Loans l
-      INNER JOIN GroupMembers gm ON gm.MemberID = l.BorrowerMemberID
-      WHERE l.LoanID = ${loanId}
-    `;
-    if (loanCheck.recordset.length === 0) return res.status(404).json({ error: "Loan not found" });
-    if (loanCheck.recordset[0].UserID !== req.user.id) return res.status(403).json({ error: "Not your loan" });
-    if (loanCheck.recordset[0].Status !== "disbursed") return res.status(400).json({ error: "Loan is not disbursed" });
+    const loanCheck = await db.query(
+      `SELECT l.loanid, l.status, gm.userid
+       FROM loans l
+       INNER JOIN groupmembers gm ON gm.memberid = l.borrowermemberid
+       WHERE l.loanid = $1`,
+      [loanId]
+    );
+    if (loanCheck.rows.length === 0) return res.status(404).json({ error: "Loan not found" });
+    if (loanCheck.rows[0].userid !== req.user.id) return res.status(403).json({ error: "Not your loan" });
+    if (loanCheck.rows[0].status !== "disbursed") return res.status(400).json({ error: "Loan is not disbursed" });
 
-    // Get MemberID
-    const memberCheck = await sql.query`
-      SELECT gm.MemberID FROM GroupMembers gm
-      INNER JOIN Loans l ON l.BorrowerMemberID = gm.MemberID
-      WHERE l.LoanID = ${loanId}
-    `;
+    const memberCheck = await db.query(
+      `SELECT gm.memberid FROM groupmembers gm
+       INNER JOIN loans l ON l.borrowermemberid = gm.memberid
+       WHERE l.loanid = $1`,
+      [loanId]
+    );
 
-    const result = await sql.query`
-      INSERT INTO LoanRepayments (LoanID, MemberID, AmountPaid, ProofOfPayment)
-      OUTPUT INSERTED.*
-      VALUES (${loanId}, ${memberCheck.recordset[0].MemberID}, ${amountPaid}, ${proofOfPayment || null})
-    `;
+    const result = await db.query(
+      `INSERT INTO loanrepayments (loanid, memberid, amountpaid, proofofpayment)
+       VALUES ($1, $2, $3, $4) RETURNING *`,
+      [loanId, memberCheck.rows[0].memberid, amountPaid, proofOfPayment || null]
+    );
 
-    res.status(201).json({ message: "Repayment submitted. Awaiting signatory approval.", repayment: result.recordset[0] });
+    res.status(201).json({ message: "Repayment submitted. Awaiting signatory approval.", repayment: result.rows[0] });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -206,23 +208,21 @@ exports.approveRepayment = async (req, res) => {
   }
 
   try {
-    // Verify signatory
-    const sigCheck = await sql.query`
-      SELECT MemberID FROM GroupMembers
-      WHERE UserID = ${req.user.id} AND GroupID = ${groupId}
-        AND Role IN ('signatory', 'admin') AND IsActive = 1
-    `;
-    if (sigCheck.recordset.length === 0) return res.status(403).json({ error: "Signatory access required" });
+    const sigCheck = await db.query(
+      `SELECT memberid FROM groupmembers
+       WHERE userid = $1 AND groupid = $2 AND role IN ('signatory', 'admin') AND isactive = true`,
+      [req.user.id, groupId]
+    );
+    if (sigCheck.rows.length === 0) return res.status(403).json({ error: "Signatory access required" });
 
-    const signatoryMemberID = sigCheck.recordset[0].MemberID;
+    const signatoryMemberID = sigCheck.rows[0].memberid;
 
-    await sql.query`
-      EXEC sp_ApproveRepayment
-        @RepaymentID = ${repaymentId},
-        @SignatoryMemberID = ${signatoryMemberID},
-        @Decision = ${decision},
-        @DecisionNote = ${decisionNote || null}
-    `;
+    await db.query("SELECT sp_approve_repayment($1, $2, $3, $4)", [
+      repaymentId,
+      signatoryMemberID,
+      decision,
+      decisionNote || null,
+    ]);
 
     res.json({ message: `Repayment ${decision}` });
   } catch (err) {
@@ -234,10 +234,11 @@ exports.approveRepayment = async (req, res) => {
 exports.getLoanInterest = async (req, res) => {
   const { loanId } = req.params;
   try {
-    const result = await sql.query`
-      SELECT * FROM LoanInterestSchedule WHERE LoanID = ${loanId} ORDER BY PeriodMonth
-    `;
-    res.json(result.recordset);
+    const result = await db.query(
+      "SELECT * FROM loaninterestschedule WHERE loanid = $1 ORDER BY periodmonth",
+      [loanId]
+    );
+    res.json(result.rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

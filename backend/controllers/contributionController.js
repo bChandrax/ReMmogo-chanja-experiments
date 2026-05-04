@@ -1,32 +1,34 @@
-const { sql } = require("../config/db");
+const { db } = require("../config/db");
 
 // GET ALL CONTRIBUTIONS FOR A GROUP
 exports.getGroupContributions = async (req, res) => {
   const { groupId } = req.params;
-  const { month } = req.query; // optional filter e.g. ?month=2025-01-01
+  const { month } = req.query;
 
   try {
     let result;
     if (month) {
-      result = await sql.query`
-        SELECT mc.*, u.FirstName + ' ' + u.LastName AS MemberName
-        FROM MonthlyContributions mc
-        INNER JOIN GroupMembers gm ON gm.MemberID = mc.MemberID
-        INNER JOIN Users u ON u.UserID = gm.UserID
-        WHERE mc.GroupID = ${groupId} AND mc.ContributionMonth = ${month}
-        ORDER BY MemberName
-      `;
+      result = await db.query(
+        `SELECT mc.*, u.firstname || ' ' || u.lastname AS membername
+         FROM monthlycontributions mc
+         INNER JOIN groupmembers gm ON gm.memberid = mc.memberid
+         INNER JOIN users u ON u.userid = gm.userid
+         WHERE mc.groupid = $1 AND mc.contributionmonth = $2
+         ORDER BY membername`,
+        [groupId, month]
+      );
     } else {
-      result = await sql.query`
-        SELECT mc.*, u.FirstName + ' ' + u.LastName AS MemberName
-        FROM MonthlyContributions mc
-        INNER JOIN GroupMembers gm ON gm.MemberID = mc.MemberID
-        INNER JOIN Users u ON u.UserID = gm.UserID
-        WHERE mc.GroupID = ${groupId}
-        ORDER BY mc.ContributionMonth DESC, MemberName
-      `;
+      result = await db.query(
+        `SELECT mc.*, u.firstname || ' ' || u.lastname AS membername
+         FROM monthlycontributions mc
+         INNER JOIN groupmembers gm ON gm.memberid = mc.memberid
+         INNER JOIN users u ON u.userid = gm.userid
+         WHERE mc.groupid = $1
+         ORDER BY mc.contributionmonth DESC, membername`,
+        [groupId]
+      );
     }
-    res.json(result.recordset);
+    res.json(result.rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -42,27 +44,25 @@ exports.submitContribution = async (req, res) => {
   }
 
   try {
-    // Verify this contribution belongs to the current user
-    const check = await sql.query`
-      SELECT mc.ContributionID, mc.Status, gm.UserID
-      FROM MonthlyContributions mc
-      INNER JOIN GroupMembers gm ON gm.MemberID = mc.MemberID
-      WHERE mc.ContributionID = ${contributionId}
-    `;
+    const check = await db.query(
+      `SELECT mc.contributionid, mc.status, gm.userid
+       FROM monthlycontributions mc
+       INNER JOIN groupmembers gm ON gm.memberid = mc.memberid
+       WHERE mc.contributionid = $1`,
+      [contributionId]
+    );
 
-    if (check.recordset.length === 0) return res.status(404).json({ error: "Contribution not found" });
-    if (check.recordset[0].UserID !== req.user.id) return res.status(403).json({ error: "Not your contribution" });
-    if (check.recordset[0].Status !== "pending") return res.status(400).json({ error: "Contribution already submitted or approved" });
+    if (check.rows.length === 0) return res.status(404).json({ error: "Contribution not found" });
+    if (check.rows[0].userid !== req.user.id) return res.status(403).json({ error: "Not your contribution" });
+    if (check.rows[0].status !== "pending") return res.status(400).json({ error: "Contribution already submitted or approved" });
 
-    await sql.query`
-      UPDATE MonthlyContributions
-      SET AmountPaid = ${amountPaid},
-          Status = 'submitted',
-          SubmittedAt = GETDATE(),
-          ProofOfPayment = ${proofOfPayment || null},
-          UpdatedAt = GETDATE()
-      WHERE ContributionID = ${contributionId}
-    `;
+    await db.query(
+      `UPDATE monthlycontributions
+       SET amountpaid = $1, status = 'submitted', submittedat = NOW(),
+           proofofpayment = $2, updatedat = NOW()
+       WHERE contributionid = $3`,
+      [amountPaid, proofOfPayment || null, contributionId]
+    );
 
     res.json({ message: "Payment submitted. Awaiting signatory approval." });
   } catch (err) {
@@ -80,65 +80,60 @@ exports.approveContribution = async (req, res) => {
   }
 
   try {
-    // Get signatory's MemberID
-    const sigCheck = await sql.query`
-      SELECT MemberID FROM GroupMembers
-      WHERE UserID = ${req.user.id} AND GroupID = ${groupId}
-        AND Role IN ('signatory', 'admin') AND IsActive = 1
-    `;
-    if (sigCheck.recordset.length === 0) return res.status(403).json({ error: "Signatory access required" });
+    const sigCheck = await db.query(
+      `SELECT memberid FROM groupmembers
+       WHERE userid = $1 AND groupid = $2 AND role IN ('signatory', 'admin') AND isactive = true`,
+      [req.user.id, groupId]
+    );
+    if (sigCheck.rows.length === 0) return res.status(403).json({ error: "Signatory access required" });
 
-    const signatoryMemberID = sigCheck.recordset[0].MemberID;
+    const signatoryMemberID = sigCheck.rows[0].memberid;
 
-    // Check contribution status
-    const contribCheck = await sql.query`
-      SELECT Status FROM MonthlyContributions WHERE ContributionID = ${contributionId}
-    `;
-    if (contribCheck.recordset[0].Status !== "submitted") {
+    const contribCheck = await db.query(
+      "SELECT status FROM monthlycontributions WHERE contributionid = $1",
+      [contributionId]
+    );
+    if (contribCheck.rows[0].status !== "submitted") {
       return res.status(400).json({ error: "Contribution is not in submitted state" });
     }
 
-    // FIX 5: Prevent the same signatory from approving twice
-    const alreadyApproved = await sql.query`
-      SELECT 1 AS approved FROM ContributionApprovals
-      WHERE ContributionID = ${contributionId} AND SignatoryMemberID = ${signatoryMemberID}
-    `;
-    if (alreadyApproved.recordset.length > 0) {
+    // FIX 5: Prevent same signatory approving twice
+    const alreadyApproved = await db.query(
+      "SELECT 1 FROM contributionapprovals WHERE contributionid = $1 AND signatorymemberid = $2",
+      [contributionId, signatoryMemberID]
+    );
+    if (alreadyApproved.rows.length > 0) {
       return res.status(400).json({ error: "You have already reviewed this contribution" });
     }
 
-    // Record approval
-    await sql.query`
-      INSERT INTO ContributionApprovals (ContributionID, SignatoryMemberID, Decision, DecisionNote)
-      VALUES (${contributionId}, ${signatoryMemberID}, ${decision}, ${decisionNote || null})
-    `;
+    await db.query(
+      "INSERT INTO contributionapprovals (contributionid, signatorymemberid, decision, decisionnote) VALUES ($1, $2, $3, $4)",
+      [contributionId, signatoryMemberID, decision, decisionNote || null]
+    );
 
-    // FIX 5: Handle rejection immediately
+    // FIX 5: Rejection is immediate
     if (decision === "rejected") {
-      await sql.query`
-        UPDATE MonthlyContributions
-        SET Status = 'rejected', UpdatedAt = GETDATE()
-        WHERE ContributionID = ${contributionId}
-      `;
+      await db.query(
+        "UPDATE monthlycontributions SET status = 'rejected', updatedat = NOW() WHERE contributionid = $1",
+        [contributionId]
+      );
       return res.json({ message: "Contribution rejected" });
     }
 
-    // FIX 5: Only mark as approved once both signatories have approved
-    const approvalCount = await sql.query`
-      SELECT COUNT(*) AS cnt FROM ContributionApprovals
-      WHERE ContributionID = ${contributionId} AND Decision = 'approved'
-    `;
+    // FIX 5: Needs both signatories
+    const approvalCount = await db.query(
+      "SELECT COUNT(*) AS cnt FROM contributionapprovals WHERE contributionid = $1 AND decision = 'approved'",
+      [contributionId]
+    );
 
-    if (approvalCount.recordset[0].cnt >= 2) {
-      await sql.query`
-        UPDATE MonthlyContributions
-        SET Status = 'approved', UpdatedAt = GETDATE()
-        WHERE ContributionID = ${contributionId}
-      `;
+    if (parseInt(approvalCount.rows[0].cnt) >= 2) {
+      await db.query(
+        "UPDATE monthlycontributions SET status = 'approved', updatedat = NOW() WHERE contributionid = $1",
+        [contributionId]
+      );
       return res.json({ message: "Both signatories approved. Contribution recorded." });
     }
 
-    // First signatory approved — keep status as submitted, wait for second
     res.json({ message: "Your approval recorded. Waiting for second signatory." });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -149,14 +144,15 @@ exports.approveContribution = async (req, res) => {
 exports.getMyContributions = async (req, res) => {
   const { groupId } = req.params;
   try {
-    const result = await sql.query`
-      SELECT mc.*
-      FROM MonthlyContributions mc
-      INNER JOIN GroupMembers gm ON gm.MemberID = mc.MemberID
-      WHERE gm.UserID = ${req.user.id} AND mc.GroupID = ${groupId}
-      ORDER BY mc.ContributionMonth DESC
-    `;
-    res.json(result.recordset);
+    const result = await db.query(
+      `SELECT mc.*
+       FROM monthlycontributions mc
+       INNER JOIN groupmembers gm ON gm.memberid = mc.memberid
+       WHERE gm.userid = $1 AND mc.groupid = $2
+       ORDER BY mc.contributionmonth DESC`,
+      [req.user.id, groupId]
+    );
+    res.json(result.rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
