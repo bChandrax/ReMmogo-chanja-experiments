@@ -81,7 +81,6 @@ export default function GroupCard({
           <span className="gc-role-tag" style={{ background: color.light, color: color.bg }}>
             {role}
           </span>
-          <span className="gc-view-link">View Group →</span>
         </div>
       </div>
     </div>

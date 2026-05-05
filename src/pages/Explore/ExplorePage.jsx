@@ -55,8 +55,9 @@ export default function ExplorePage() {
           status: group.isactive ? 'Active' : 'Inactive',
           colorIndex: index % 4,
           signatory: false,
-          open: group.isactive && (group.membercount || 0) < 12, // Open if under 12 members
+          open: group.isactive && (group.membercount || 0) < 12, // Open if active and under 12 members
           location: group.location || 'Botswana',
+          isactive: group.isactive,
         }));
 
         setGroups(transformedGroups);
@@ -190,15 +191,19 @@ export default function ExplorePage() {
             <div className="ep-groups-grid">
               {filtered.map((g, i) => (
                 <div key={g.groupid} className="ep-card-wrap">
-                  <GroupCard {...g} colorIndex={i} />
+                  <Link to={`/GrpDash?id=${g.groupid}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                    <GroupCard {...g} colorIndex={i} />
+                  </Link>
                   <div className="ep-card-meta">
                     <span className="ep-location">📍 {g.location}</span>
                     {g.open ? (
-                      <button className="ep-join-btn" onClick={() => setJoinGroup(g)}>
+                      <button className="ep-join-btn" onClick={(e) => { e.preventDefault(); setJoinGroup(g); }}>
                         Request to Join
                       </button>
                     ) : (
-                      <span className="ep-closed-badge">Full</span>
+                      <span className="ep-closed-badge">
+                        {g.isactive ? 'Full' : 'Inactive'}
+                      </span>
                     )}
                   </div>
                 </div>
