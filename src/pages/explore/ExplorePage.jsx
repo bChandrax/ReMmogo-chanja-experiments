@@ -24,16 +24,22 @@ export default function ExplorePage() {
       setLoading(true);
       setError(null);
 
-      // Fetch all groups from backend
-      const response = await groupsAPI.getAll();
+      // Fetch all groups and user's groups in parallel
+      const [allGroupsResponse, userGroupsResponse] = await Promise.all([
+        groupsAPI.getAll(),
+        groupsAPI.getMine()
+      ]);
 
-      if (response.success && response.data) {
-        // Get user's current groups to exclude them
-        const userGroupsResponse = await groupsAPI.getMine();
-        const userGroupIds = userGroupsResponse.success ? userGroupsResponse.data.map(g => g.groupid) : [];
+      if (allGroupsResponse.success && allGroupsResponse.data) {
+        // Get user's current group IDs to exclude them
+        const userGroupIds = new Set(
+          (userGroupsResponse.success ? userGroupsResponse.data : []).map(g => g.groupid)
+        );
 
         // Filter to show only groups user is NOT a member of
-        const otherGroups = response.data.filter(group => !userGroupIds.includes(group.groupid));
+        const otherGroups = allGroupsResponse.data.filter(
+          group => !userGroupIds.has(group.groupid)
+        );
 
         // Transform backend data to match component props
         const transformedGroups = otherGroups.map((group, index) => ({
