@@ -14,8 +14,7 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
       "http://localhost:5173",
       "http://localhost:5174",
       "http://localhost:3000",
-      "https://re-mmogo.vercel.app",
-      "https://re-mmogo-*.vercel.app"
+      "https://re-mmogo.vercel.app"
     ];
 
 console.log('🌐 Allowed origins:', allowedOrigins);

@@ -140,7 +140,7 @@ npm run dev
 pnpm run dev
 ```
 
-Visit **http://localhost:5173** in your browser.
+Visit **https://re-mmogo.vercel.app/** in your browser.
 
 ---
 
