@@ -20,6 +20,7 @@ export default function MyGroups() {
       setLoading(true);
       setError(null);
       
+      // Fetch all groups (viewable by all users)
       const response = await groupsAPI.getAll();
       
       if (response.success && response.data) {
@@ -102,8 +103,8 @@ export default function MyGroups() {
               <h2 className="mg-page-title">My Groups</h2>
               <p className="mg-page-sub">
                 {groups.length === 0 
-                  ? "You are not a member of any groups yet" 
-                  : `You are a member of ${groups.length} motshelo group${groups.length !== 1 ? 's' : ''}`}
+                  ? "No groups yet. Create one or explore existing groups!" 
+                  : `${groups.length} group${groups.length !== 1 ? 's' : ''} available`}
               </p>
             </div>
             <div className="mg-header-actions">
