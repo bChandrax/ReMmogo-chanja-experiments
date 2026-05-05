@@ -17,7 +17,8 @@ export default function SettingsPage() {
     lastName: '',
     email: '',
     phone: '',
-    location: ''
+    location: '',
+    bio: ''
   });
 
   useEffect(() => {
@@ -27,7 +28,8 @@ export default function SettingsPage() {
         lastName: user.lastName || '',
         email: user.email || '',
         phone: user.phone || '',
-        location: user.location || ''
+        location: user.location || '',
+        bio: user.bio || ''
       });
     }
   }, [user]);
@@ -106,7 +108,9 @@ export default function SettingsPage() {
                   </div>
 
                   <div className="profile-header">
-                    <div className="profile-avatar">HP</div>
+                    <div className="profile-avatar">
+                      {profile.firstName?.charAt(0)}{profile.lastName?.charAt(0) || ''}
+                    </div>
                     <div className="profile-actions">
                       <button className="btn-outline-sm">Change Photo</button>
                       <button className="btn-text-sm">Remove</button>
@@ -118,44 +122,72 @@ export default function SettingsPage() {
                       <label>First Name</label>
                       <div className="input-field">
                         <div className="input-icon-wrapper"><User size={18} /></div>
-                        <input className="inner-form-input" type="text" defaultValue="Hello" />
+                        <input 
+                          className="inner-form-input" 
+                          type="text" 
+                          value={profile.firstName}
+                          onChange={(e) => setProfile({...profile, firstName: e.target.value})}
+                        />
                       </div>
                     </div>
                     <div className="form-group">
                       <label>Last Name</label>
                       <div className="input-field">
                         <div className="input-icon-wrapper"><User size={18} /></div>
-                        <input className="inner-form-input" type="text" defaultValue="Parvez" />
+                        <input 
+                          className="inner-form-input" 
+                          type="text" 
+                          value={profile.lastName}
+                          onChange={(e) => setProfile({...profile, lastName: e.target.value})}
+                        />
                       </div>
                     </div>
                     <div className="form-group">
                       <label>Email Address</label>
                       <div className="input-field">
                         <div className="input-icon-wrapper"><Mail size={18} /></div>
-                        <input className="inner-form-input" type="email" defaultValue="hello.parvez@example.com" />
+                        <input 
+                          className="inner-form-input" 
+                          type="email" 
+                          value={profile.email}
+                          onChange={(e) => setProfile({...profile, email: e.target.value})}
+                        />
                       </div>
                     </div>
                     <div className="form-group">
                       <label>Phone Number</label>
                       <div className="input-field">
                         <div className="input-icon-wrapper"><Phone size={18} /></div>
-                        <input className="inner-form-input" type="tel" defaultValue="+267 72 123 456" />
+                        <input 
+                          className="inner-form-input" 
+                          type="tel" 
+                          value={profile.phone}
+                          onChange={(e) => setProfile({...profile, phone: e.target.value})}
+                          placeholder="+267 00 000 000"
+                        />
                       </div>
                     </div>
                     <div className="form-group full-width">
                       <label>Location</label>
                       <div className="input-field">
                         <div className="input-icon-wrapper"><MapPin size={18} /></div>
-                        <input className="inner-form-input" type="text" defaultValue="Gaborone, Botswana" />
+                        <input 
+                          className="inner-form-input" 
+                          type="text" 
+                          value={profile.location}
+                          onChange={(e) => setProfile({...profile, location: e.target.value})}
+                          placeholder="City, Botswana"
+                        />
                       </div>
                     </div>
                     <div className="form-group full-width">
                       <label>Bio</label>
-                      <textarea 
-                        className="form-input" 
-                        rows={4} 
-                        placeholder="Tell us about yourself..." 
-                        defaultValue="Active member of multiple savings groups. Passionate about community development and financial literacy." 
+                      <textarea
+                        className="form-input"
+                        rows={4}
+                        placeholder="Tell us about yourself..."
+                        value={profile.bio}
+                        onChange={(e) => setProfile({...profile, bio: e.target.value})}
                       />
                     </div>
                   </div>
