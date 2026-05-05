@@ -154,7 +154,7 @@ export default function MyContributions() {
   });
 
   const paidCount = contributions.filter(c => c.status === 'paid').length;
-  const paidAmount = contributions.filter(c => c.status === 'paid').reduce((sum, c) => sum + (c.amountpaid || 0), 0);
+  const paidAmount = contributions.filter(c => c.status === 'paid').reduce((sum, c) => sum + parseFloat(c.amountpaid || 0), 0);
   const targetAmount = 12000; // 12 months × P1000
   const pct = Math.round((paidCount / 12) * 100);
 
