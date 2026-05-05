@@ -101,7 +101,9 @@ export default function MyGroups() {
             <div>
               <h2 className="mg-page-title">My Groups</h2>
               <p className="mg-page-sub">
-                You are a member of {groups.length} motshelo group{groups.length !== 1 ? 's' : ''}
+                {groups.length === 0 
+                  ? "You are not a member of any groups yet" 
+                  : `You are a member of ${groups.length} motshelo group${groups.length !== 1 ? 's' : ''}`}
               </p>
             </div>
             <div className="mg-header-actions">

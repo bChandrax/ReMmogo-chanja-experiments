@@ -392,6 +392,13 @@ textarea.form-input:focus {
   margin-bottom: 16px;
 }
 
+/* Read-only fields for user info */
+.read-only-field {
+  background: #f5f5f5 !important;
+  color: #666 !important;
+  cursor: not-allowed !important;
+}
+
 .security-desc {
   font-size: 13px;
   color: #888;

@@ -1,13 +1,36 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { User, Mail, Phone, MapPin, Bell, Lock, CreditCard, Shield, Eye, EyeOff, Save, Check } from "lucide-react";
 import SideBar from "../../components/sideBar/sideBar";
 import DashboardNavBar from "../../components/NavBar/DashboardNavBar";
+import { useAuth } from "../../context/AuthContext";
 import "./SettingsPage.css";
 
 export default function SettingsPage() {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("profile");
   const [showPassword, setShowPassword] = useState(false);
   const [saved, setSaved] = useState(false);
+  
+  // Profile form state
+  const [profile, setProfile] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    location: ''
+  });
+
+  useEffect(() => {
+    if (user) {
+      setProfile({
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        email: user.email || '',
+        phone: user.phone || '',
+        location: user.location || ''
+      });
+    }
+  }, [user]);
 
   const handleSave = () => {
     setSaved(true);
@@ -225,6 +248,37 @@ export default function SettingsPage() {
                     <p className="section-desc">Manage your password and security preferences</p>
                   </div>
 
+                  {/* User Account Information */}
+                  <div className="security-section">
+                    <h3>Account Information</h3>
+                    <div className="form-grid">
+                      <div className="form-group">
+                        <label>Full Name</label>
+                        <div className="input-field">
+                          <div className="input-icon-wrapper"><User size={18} /></div>
+                          <input 
+                            type="text" 
+                            value={`${profile.firstName} ${profile.lastName}`.trim() || 'Not set'} 
+                            readOnly 
+                            className="read-only-field"
+                          />
+                        </div>
+                      </div>
+                      <div className="form-group">
+                        <label>Email Address</label>
+                        <div className="input-field">
+                          <div className="input-icon-wrapper"><Mail size={18} /></div>
+                          <input 
+                            type="email" 
+                            value={profile.email || 'Not set'} 
+                            readOnly 
+                            className="read-only-field"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="security-section">
                     <h3>Change Password</h3>
                     <div className="form-grid">
@@ -233,7 +287,7 @@ export default function SettingsPage() {
                         <div className="input-field">
                           <div className="input-icon-wrapper"><Lock size={18} /></div>
                           <input type={showPassword ? "text" : "password"} placeholder="Enter current password" />
-                          <button 
+                          <button
                             className="password-toggle"
                             onClick={() => setShowPassword(!showPassword)}
                           >
