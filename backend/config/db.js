@@ -2,20 +2,50 @@ const { Pool } = require("pg");
 require("dotenv").config();
 
 // Determine if we're running in production (e.g., on Render)
-const isProduction = process.env.NODE_ENV === "production" && process.env.DATABASE_URL?.includes('render.com');
+const isProduction = process.env.NODE_ENV === "production" && 
+  (process.env.DATABASE_URL?.includes('render.com') || 
+   process.env.DATABASE_URL?.includes('neon.tech') ||
+   process.env.NODE_ENV === 'production');
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  // Only use SSL for production databases (Render, etc.)
-  ssl: isProduction ? { rejectUnauthorized: false } : false,
-});
+// Database configuration
+// Try to use individual DB variables if DATABASE_URL is not set or is a placeholder
+let poolConfig = {};
+
+if (process.env.DATABASE_URL && !process.env.DATABASE_URL.includes('YOUR_PASSWORD')) {
+  // Use DATABASE_URL if it's properly configured
+  poolConfig = {
+    connectionString: process.env.DATABASE_URL,
+    ssl: isProduction ? { rejectUnauthorized: false } : false,
+  };
+} else if (process.env.DB_HOST && process.env.DB_DATABASE) {
+  // Fall back to individual DB variables
+  poolConfig = {
+    host: process.env.DB_HOST,
+    database: process.env.DB_DATABASE,
+    user: process.env.DB_USER || 'postgres',
+    password: process.env.DB_PASSWORD,
+    port: process.env.DB_PORT || 5432,
+    ssl: isProduction ? { rejectUnauthorized: false } : false,
+  };
+} else {
+  // Default to localhost with DATABASE_URL format
+  poolConfig = {
+    connectionString: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/remmogo',
+    ssl: false,
+  };
+}
+
+const pool = new Pool(poolConfig);
 
 const connectDB = async () => {
   try {
     await pool.query("SELECT 1");
     console.log("✅ Connected to PostgreSQL successfully");
+    console.log(`📊 Database: ${process.env.DB_DATABASE || 'remmogo'}`);
+    console.log(` Host: ${process.env.DB_HOST || 'localhost'}:${process.env.DB_PORT || 5432}`);
   } catch (err) {
     console.error("❌ DB connection failed:", err.message);
+    console.error("💡 Check your .env file and ensure PostgreSQL is running");
     // Don't exit process in development - allow retries
     if (isProduction) {
       process.exit(1);
