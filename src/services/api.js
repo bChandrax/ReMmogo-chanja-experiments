@@ -1,7 +1,7 @@
 // API URL configuration
 // Uses VITE_API_URL from environment variables (set in Vercel dashboard)
 // Falls back to localhost for development
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5175/api";
+const API_URL = import.meta.env.VITE_API_URL || "https://remmogo.onrender.com/api";
 
 // Get token from localStorage
 const getToken = () => localStorage.getItem('token');
