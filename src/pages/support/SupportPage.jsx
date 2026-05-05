@@ -1,24 +1,136 @@
 import { useState } from "react";
-import { User, Mail, Phone, MapPin, Bell, Lock, CreditCard, Shield, Eye, EyeOff, Save, Check } from "lucide-react";
+import { HelpCircle, Mail, Phone, MessageCircle, ChevronDown, Book, FileText, Video, Users, Search, ExternalLink, Send } from "lucide-react";
 import SideBar from "../../components/sideBar/sideBar";
 import DashboardNavBar from "../../components/NavBar/DashboardNavBar";
-import { useAuth } from "../../context/AuthContext";
-import "./SettingsPage.css";
+import "./SupportPage.css";
 
-export default function SettingsPage() {
-  const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState("profile");
-  const [showPassword, setShowPassword] = useState(false);
-  const [saved, setSaved] = useState(false);
+const FAQS = [
+  {
+    category: "Getting Started",
+    icon: Book,
+    faqs: [
+      {
+        question: "What is a motshelo?",
+        answer: "A motshelo is a traditional Botswana community savings group where members contribute money monthly. Each month, one member receives the pooled funds or members can access loans from the collective pool. It's a beautiful tradition of mutual support and financial solidarity."
+      },
+      {
+        question: "How do I create a new group?",
+        answer: "To create a group, go to 'My Groups' and click 'New Group'. Fill in the group details including name, contribution amount, and meeting frequency. You can then invite members via email or SMS. As the creator, you'll be the initial signatory."
+      },
+      {
+        question: "How do I invite members to my group?",
+        answer: "Once your group is created, go to the group page and click 'Invite Members'. You can send invitations via email, SMS, or share a unique group link. Members can request to join or be directly added based on your group settings."
+      },
+      {
+        question: "What information do I need to register?",
+        answer: "You'll need a valid email address, phone number, and your national ID number. Registration is free and only takes a few minutes. Once registered, you can create or join motshelo groups immediately."
+      }
+    ]
+  },
+  {
+    category: "Contributions & Payments",
+    icon: FileText,
+    faqs: [
+      {
+        question: "How do I make a contribution?",
+        answer: "Go to your group's page and click 'Make Contribution'. You can upload proof of payment via bank transfer, mobile money, or cash. The signatories will review and approve your submission."
+      },
+      {
+        question: "What happens if I miss a contribution?",
+        answer: "Missing contributions may affect your standing in the group. Some groups charge late fees or interest on missed payments. Check your group's specific rules. You can usually make up missed contributions in subsequent months."
+      },
+      {
+        question: "Can I contribute extra amounts?",
+        answer: "Yes! Many members choose to contribute additional amounts beyond the required monthly contribution. Extra contributions can help you earn more interest and increase your borrowing limit."
+      },
+      {
+        question: "What payment methods are accepted?",
+        answer: "ReMmogo supports bank transfers, mobile money (Orange Money, MyZaka, eWallet), and cash deposits. Upload proof of payment in the app and signatories will verify the transaction."
+      }
+    ]
+  },
+  {
+    category: "Loans & Borrowing",
+    icon: Video,
+    faqs: [
+      {
+        question: "How much can I borrow?",
+        answer: "Your borrowing limit is typically based on your total contributions and the group's rules. Most groups allow members to borrow 2-3 times their contribution amount. Interest rates are set by each group, commonly around 20% per month."
+      },
+      {
+        question: "How are loans approved?",
+        answer: "Loans require approval from the group's signatories (usually 2). When you request a loan, signatories receive a notification and can review your request. Once both approve, the funds are released to you."
+      },
+      {
+        question: "What happens if I default on a loan?",
+        answer: "Defaulting on a loan affects your credit within the group and may result in penalties. The group may use your contributions to recover the outstanding amount. In severe cases, membership may be terminated."
+      },
+      {
+        question: "Can I repay my loan early?",
+        answer: "Yes! Early repayment is encouraged and may reduce the total interest you pay. Some groups offer discounts for early repayment. Check with your group's specific policies."
+      }
+    ]
+  },
+  {
+    category: "Account & Security",
+    icon: Users,
+    faqs: [
+      {
+        question: "Is my data secure?",
+        answer: "Yes! ReMmogo uses industry-standard encryption for all data transmission and storage. We employ role-based access controls so members only see information relevant to them. All actions are logged for accountability."
+      },
+      {
+        question: "Can I be a member of multiple groups?",
+        answer: "Absolutely! Many members participate in multiple motshelo groups - family, friends, colleagues, or community groups. You can manage all your groups from a single dashboard."
+      },
+      {
+        question: "How do I change my password?",
+        answer: "Go to Settings > Security to change your password. For added security, we recommend enabling two-factor authentication (2FA) which adds an extra layer of protection to your account."
+      },
+      {
+        question: "What if I forget my login details?",
+        answer: "Click 'Forgot Password' on the login page and enter your email. We'll send you a password reset link. If you've forgotten your email, contact support with your national ID for verification."
+      }
+    ]
+  }
+];
 
-  // Display name for payment cards — uppercase full name from logged-in user
-  const cardHolderName = user
-    ? `${user.firstName || ''} ${user.lastName || ''}`.trim().toUpperCase()
-    : 'ACCOUNT HOLDER';
+const CONTACT_OPTIONS = [
+  {
+    icon: Mail,
+    title: "Email Support",
+    description: "Get help via email",
+    contact: "support@re-mmogo.bw",
+    action: "Send Email"
+  },
+  {
+    icon: Phone,
+    title: "Phone Support",
+    description: "Call us directly",
+    contact: "+267 390 1234",
+    action: "Call Now"
+  },
+  {
+    icon: MessageCircle,
+    title: "Live Chat",
+    description: "Chat with our team",
+    contact: "Available 9AM - 5PM",
+    action: "Start Chat"
+  }
+];
 
-  const handleSave = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+export default function SupportPage() {
+  const [openFaq, setOpenFaq] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [contactForm, setContactForm] = useState({
+    subject: "",
+    message: ""
+  });
+
+  const handleContactSubmit = (e) => {
+    e.preventDefault();
+    alert("Thank you for your message. We'll get back to you soon!");
+    setContactForm({ subject: "", message: "" });
   };
 
   return (
@@ -28,385 +140,171 @@ export default function SettingsPage() {
       <div className="main">
         <DashboardNavBar />
         
-        <div className="settings-content">
-          <div className="settings-header">
-            <div>
-              <h1>Settings</h1>
-              <p>Manage your account settings and preferences</p>
+        <div className="support-content">
+          {/* Hero Section */}
+          <div className="support-hero">
+            <div className="support-hero-content">
+              <div className="hero-icon-wrapper">
+                <HelpCircle size={56} />
+              </div>
+              <h1>How can we help you?</h1>
+              <p>Find answers to common questions or get in touch with our support team</p>
+              
+              <div className="support-search">
+                <Search size={20} />
+                <input
+                  type="text"
+                  placeholder="Search for help articles, FAQs, or topics..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
             </div>
-            <button className={`save-btn ${saved ? 'saved' : ''}`} onClick={handleSave}>
-              {saved ? <Check size={18} /> : <Save size={18} />}
-              {saved ? "Saved!" : "Save Changes"}
-            </button>
           </div>
 
-          <div className="settings-body">
-            {/* Settings Tabs */}
-            <div className="settings-tabs">
-              <button 
-                className={`settings-tab ${activeTab === "profile" ? "active" : ""}`}
-                onClick={() => setActiveTab("profile")}
-              >
-                <User size={18} />
-                Profile
-              </button>
-              <button 
-                className={`settings-tab ${activeTab === "notifications" ? "active" : ""}`}
-                onClick={() => setActiveTab("notifications")}
-              >
-                <Bell size={18} />
-                Notifications
-              </button>
-              <button 
-                className={`settings-tab ${activeTab === "security" ? "active" : ""}`}
-                onClick={() => setActiveTab("security")}
-              >
-                <Lock size={18} />
-                Security
-              </button>
-              <button 
-                className={`settings-tab ${activeTab === "payment" ? "active" : ""}`}
-                onClick={() => setActiveTab("payment")}
-              >
-                <CreditCard size={18} />
-                Payment
-              </button>
-              <button 
-                className={`settings-tab ${activeTab === "privacy" ? "active" : ""}`}
-                onClick={() => setActiveTab("privacy")}
-              >
-                <Shield size={18} />
-                Privacy
+          {/* Quick Links */}
+          <div className="support-quick-links">
+            <div className="quick-link-card">
+              <div className="quick-link-icon">
+                <Book size={24} />
+              </div>
+              <h3>Documentation</h3>
+              <p>Comprehensive guides and tutorials</p>
+              <button className="link-btn">
+                View Docs <ExternalLink size={14} />
               </button>
             </div>
+            <div className="quick-link-card">
+              <div className="quick-link-icon">
+                <Video size={24} />
+              </div>
+              <h3>Video Tutorials</h3>
+              <p>Watch step-by-step guides</p>
+              <button className="link-btn">
+                Watch Videos <ExternalLink size={14} />
+              </button>
+            </div>
+            <div className="quick-link-card">
+              <div className="quick-link-icon">
+                <Users size={24} />
+              </div>
+              <h3>Community Forum</h3>
+              <p>Connect with other users</p>
+              <button className="link-btn">
+                Join Forum <ExternalLink size={14} />
+              </button>
+            </div>
+          </div>
 
-            {/* Settings Content */}
-            <div className="settings-panel">
-              {activeTab === "profile" && (
-                <div className="settings-section">
-                  <div className="section-header">
-                    <h2>Profile Information</h2>
-                    <p className="section-desc">Update your personal information and profile details</p>
+          {/* FAQ Section */}
+          <div className="faq-section">
+            <div className="section-header">
+              <h2>Frequently Asked Questions</h2>
+              <p>Find answers to common questions about ReMmogo</p>
+            </div>
+
+            {FAQS.map((category, catIndex) => (
+              <div key={catIndex} className="faq-category">
+                <div className="faq-category-header">
+                  <div className="faq-category-icon">
+                    <category.icon size={20} />
                   </div>
-
-                  <div className="profile-header">
-                    <div className="profile-avatar">HP</div>
-                    <div className="profile-actions">
-                      <button className="btn-outline-sm">Change Photo</button>
-                      <button className="btn-text-sm">Remove</button>
+                  <h3>{category.category}</h3>
+                </div>
+                <div className="faq-list">
+                  {category.faqs.map((faq, faqIndex) => (
+                    <div
+                      key={faqIndex}
+                      className={`faq-item ${openFaq === `${catIndex}-${faqIndex}` ? 'open' : ''}`}
+                      onClick={() => setOpenFaq(openFaq === `${catIndex}-${faqIndex}` ? null : `${catIndex}-${faqIndex}`)}
+                    >
+                      <div className="faq-question">
+                        <span>{faq.question}</span>
+                        <ChevronDown size={20} className={`faq-icon ${openFaq === `${catIndex}-${faqIndex}` ? 'rotated' : ''}`} />
+                      </div>
+                      <div className="faq-answer">
+                        {faq.answer}
+                      </div>
                     </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Contact Section */}
+          <div className="contact-section">
+            <div className="section-header">
+              <h2>Still need help?</h2>
+              <p>Our support team is here to assist you</p>
+            </div>
+
+            <div className="contact-options">
+              {CONTACT_OPTIONS.map((option, index) => (
+                <div key={index} className="contact-card">
+                  <div className="contact-icon">
+                    <option.icon size={24} />
                   </div>
+                  <h3>{option.title}</h3>
+                  <p className="contact-desc">{option.description}</p>
+                  <p className="contact-value">{option.contact}</p>
+                  <button className="contact-btn">{option.action}</button>
+                </div>
+              ))}
+            </div>
 
-                  <div className="form-grid">
-                    <div className="form-group">
-                      <label>First Name</label>
-                      <div className="input-field">
-                        <div className="input-icon-wrapper"><User size={18} /></div>
-                        <input className="inner-form-input" type="text" defaultValue="Hello" />
-                      </div>
-                    </div>
-                    <div className="form-group">
-                      <label>Last Name</label>
-                      <div className="input-field">
-                        <div className="input-icon-wrapper"><User size={18} /></div>
-                        <input className="inner-form-input" type="text" defaultValue="Parvez" />
-                      </div>
-                    </div>
-                    <div className="form-group">
-                      <label>Email Address</label>
-                      <div className="input-field">
-                        <div className="input-icon-wrapper"><Mail size={18} /></div>
-                        <input className="inner-form-input" type="email" defaultValue="hello.parvez@example.com" />
-                      </div>
-                    </div>
-                    <div className="form-group">
-                      <label>Phone Number</label>
-                      <div className="input-field">
-                        <div className="input-icon-wrapper"><Phone size={18} /></div>
-                        <input className="inner-form-input" type="tel" defaultValue="+267 72 123 456" />
-                      </div>
-                    </div>
-                    <div className="form-group full-width">
-                      <label>Location</label>
-                      <div className="input-field">
-                        <div className="input-icon-wrapper"><MapPin size={18} /></div>
-                        <input className="inner-form-input" type="text" defaultValue="Gaborone, Botswana" />
-                      </div>
-                    </div>
-                    <div className="form-group full-width">
-                      <label>Bio</label>
-                      <textarea 
-                        className="form-input" 
-                        rows={4} 
-                        placeholder="Tell us about yourself..." 
-                        defaultValue="Active member of multiple savings groups. Passionate about community development and financial literacy." 
-                      />
-                    </div>
+            {/* Contact Form */}
+            <div className="contact-form-container">
+              <h3>Send us a message</h3>
+              <form onSubmit={handleContactSubmit}>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Your Name</label>
+                    <input 
+                      type="text" 
+                      placeholder="Enter your name"
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Email Address</label>
+                    <input 
+                      type="email" 
+                      placeholder="Enter your email"
+                      required
+                    />
                   </div>
                 </div>
-              )}
-
-              {activeTab === "notifications" && (
-                <div className="settings-section">
-                  <div className="section-header">
-                    <h2>Notification Preferences</h2>
-                    <p className="section-desc">Choose how you want to receive notifications</p>
-                  </div>
-
-                  <div className="notification-groups">
-                    <div className="notification-group">
-                      <h3>Group Notifications</h3>
-                      <div className="notification-item">
-                        <div className="notification-info">
-                          <span className="notification-title">New Messages</span>
-                          <span className="notification-desc">Get notified when someone messages in your groups</span>
-                        </div>
-                        <label className="toggle">
-                          <input type="checkbox" defaultChecked />
-                          <span className="toggle-slider"></span>
-                        </label>
-                      </div>
-                      <div className="notification-item">
-                        <div className="notification-info">
-                          <span className="notification-title">Contribution Reminders</span>
-                          <span className="notification-desc">Receive reminders when contributions are due</span>
-                        </div>
-                        <label className="toggle">
-                          <input type="checkbox" defaultChecked />
-                          <span className="toggle-slider"></span>
-                        </label>
-                      </div>
-                      <div className="notification-item">
-                        <div className="notification-info">
-                          <span className="notification-title">Loan Approvals</span>
-                          <span className="notification-desc">Get notified when loans are approved or rejected</span>
-                        </div>
-                        <label className="toggle">
-                          <input type="checkbox" defaultChecked />
-                          <span className="toggle-slider"></span>
-                        </label>
-                      </div>
-                    </div>
-
-                    <div className="notification-group">
-                      <h3>System Notifications</h3>
-                      <div className="notification-item">
-                        <div className="notification-info">
-                          <span className="notification-title">Security Alerts</span>
-                          <span className="notification-desc">Get notified about important security updates</span>
-                        </div>
-                        <label className="toggle">
-                          <input type="checkbox" defaultChecked />
-                          <span className="toggle-slider"></span>
-                        </label>
-                      </div>
-                      <div className="notification-item">
-                        <div className="notification-info">
-                          <span className="notification-title">Monthly Statements</span>
-                          <span className="notification-desc">Receive monthly summary of your activities</span>
-                        </div>
-                        <label className="toggle">
-                          <input type="checkbox" defaultChecked />
-                          <span className="toggle-slider"></span>
-                        </label>
-                      </div>
-                      <div className="notification-item">
-                        <div className="notification-info">
-                          <span className="notification-title">Marketing Emails</span>
-                          <span className="notification-desc">Receive updates about new features and promotions</span>
-                        </div>
-                        <label className="toggle">
-                          <input type="checkbox" />
-                          <span className="toggle-slider"></span>
-                        </label>
-                      </div>
-                    </div>
-                  </div>
+                <div className="form-group">
+                  <label>Subject</label>
+                  <select 
+                    value={contactForm.subject}
+                    onChange={(e) => setContactForm({...contactForm, subject: e.target.value})}
+                    required
+                  >
+                    <option value="">Select a subject</option>
+                    <option value="general">General Inquiry</option>
+                    <option value="technical">Technical Support</option>
+                    <option value="billing">Billing Question</option>
+                    <option value="feature">Feature Request</option>
+                    <option value="other">Other</option>
+                  </select>
                 </div>
-              )}
-
-              {activeTab === "security" && (
-                <div className="settings-section">
-                  <div className="section-header">
-                    <h2>Security Settings</h2>
-                    <p className="section-desc">Manage your password and security preferences</p>
-                  </div>
-
-                  <div className="security-section">
-                    <h3>Change Password</h3>
-                    <div className="form-grid">
-                      <div className="form-group full-width">
-                        <label>Current Password</label>
-                        <div className="input-field">
-                          <div className="input-icon-wrapper"><Lock size={18} /></div>
-                          <input type={showPassword ? "text" : "password"} placeholder="Enter current password" />
-                          <button 
-                            className="password-toggle"
-                            onClick={() => setShowPassword(!showPassword)}
-                          >
-                            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                          </button>
-                        </div>
-                      </div>
-                      <div className="form-group full-width">
-                        <label>New Password</label>
-                        <div className="input-field">
-                          <div className="input-icon-wrapper"><Lock size={18} /></div>
-                          <input type="password" placeholder="Enter new password" />
-                        </div>
-                      </div>
-                      <div className="form-group full-width">
-                        <label>Confirm New Password</label>
-                        <div className="input-field">
-                          <div className="input-icon-wrapper"><Lock size={18} /></div>
-                          <input type="password" placeholder="Confirm new password" />
-                        </div>
-                      </div>
-                    </div>
-                    <button className="btn-primary">Update Password</button>
-                  </div>
-
-                  <div className="security-section">
-                    <h3>Two-Factor Authentication</h3>
-                    <p className="security-desc">Add an extra layer of security to your account</p>
-                    <div className="two-factor-status">
-                      <div className="status-info">
-                        <Shield size={20} className="status-icon" />
-                        <div>
-                          <span className="status-title">Two-Factor Authentication</span>
-                          <span className="status-desc">Currently disabled</span>
-                        </div>
-                      </div>
-                      <button className="btn-outline">Enable 2FA</button>
-                    </div>
-                  </div>
-
-                  <div className="security-section">
-                    <h3>Active Sessions</h3>
-                    <div className="session-item">
-                      <div className="session-info">
-                        <div className="session-icon"><Bell size={18} /></div>
-                        <div>
-                          <span className="session-title">Chrome on Windows</span>
-                          <span className="session-desc">Gaborone, Botswana • Current session</span>
-                        </div>
-                      </div>
-                      <span className="session-badge current">Current</span>
-                    </div>
-                    <div className="session-item">
-                      <div className="session-info">
-                        <div className="session-icon"><Bell size={18} /></div>
-                        <div>
-                          <span className="session-title">Safari on iPhone</span>
-                          <span className="session-desc">Gaborone, Botswana • 2 days ago</span>
-                        </div>
-                      </div>
-                      <button className="btn-text-sm danger">Revoke</button>
-                    </div>
-                  </div>
+                <div className="form-group">
+                  <label>Message</label>
+                  <textarea 
+                    rows={5}
+                    placeholder="Describe your question or issue..."
+                    value={contactForm.message}
+                    onChange={(e) => setContactForm({...contactForm, message: e.target.value})}
+                    required
+                  />
                 </div>
-              )}
-
-              {activeTab === "payment" && (
-                <div className="settings-section">
-                  <div className="section-header">
-                    <h2>Payment Methods</h2>
-                    <p className="section-desc">Manage your linked bank accounts and payment methods</p>
-                  </div>
-
-                  <div className="payment-methods">
-                    <div className="payment-card">
-                      <div className="card-header">
-                        <div className="card-bank">
-                          <div className="bank-icon">FN</div>
-                          <div>
-                            <span className="card-bank-name">First National Bank</span>
-                            <span className="card-number">•••• •••• •••• 4521</span>
-                          </div>
-                        </div>
-                        <span className="card-badge primary">Primary</span>
-                      </div>
-                      <div className="card-footer">
-                        <span className="card-holder">{cardHolderName}</span>
-                        <span className="card-expires">Expires 12/27</span>
-                      </div>
-                    </div>
-
-                    <div className="payment-card">
-                      <div className="card-header">
-                        <div className="card-bank">
-                          <div className="bank-icon" style={{ background: "#1a4d8f" }}>BS</div>
-                          <div>
-                            <span className="card-bank-name">Botswana Savings Bank</span>
-                            <span className="card-number">•••• •••• •••• 8932</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="card-footer">
-                        <span className="card-holder">{cardHolderName}</span>
-                        <span className="card-expires">Expires 08/26</span>
-                      </div>
-                    </div>
-
-                    <button className="add-payment-btn">
-                      <CreditCard size={18} />
-                      Add Payment Method
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {activeTab === "privacy" && (
-                <div className="settings-section">
-                  <div className="section-header">
-                    <h2>Privacy Settings</h2>
-                    <p className="section-desc">Control who can see your information and activities</p>
-                  </div>
-
-                  <div className="privacy-group">
-                    <h3>Profile Visibility</h3>
-                    <div className="privacy-item">
-                      <div className="privacy-info">
-                        <span className="privacy-title">Profile Visibility</span>
-                        <span className="privacy-desc">Who can see your profile information</span>
-                      </div>
-                      <select className="privacy-select" defaultValue="groups">
-                        <option value="public">Public</option>
-                        <option value="groups">Group Members Only</option>
-                        <option value="private">Private</option>
-                      </select>
-                    </div>
-                    <div className="privacy-item">
-                      <div className="privacy-info">
-                        <span className="privacy-title">Activity Status</span>
-                        <span className="privacy-desc">Show when you're active on the platform</span>
-                      </div>
-                      <label className="toggle">
-                        <input type="checkbox" defaultChecked />
-                        <span className="toggle-slider"></span>
-                      </label>
-                    </div>
-                  </div>
-
-                  <div className="privacy-group">
-                    <h3>Data & Privacy</h3>
-                    <div className="privacy-item">
-                      <div className="privacy-info">
-                        <span className="privacy-title">Download My Data</span>
-                        <span className="privacy-desc">Get a copy of all your data</span>
-                      </div>
-                      <button className="btn-outline-sm">Download</button>
-                    </div>
-                    <div className="privacy-item">
-                      <div className="privacy-info">
-                        <span className="privacy-title">Delete Account</span>
-                        <span className="privacy-desc">Permanently delete your account and data</span>
-                      </div>
-                      <button className="btn-text-sm danger">Delete Account</button>
-                    </div>
-                  </div>
-                </div>
-              )}
+                <button type="submit" className="submit-btn">
+                  Send Message
+                  <Send size={16} />
+                </button>
+              </form>
             </div>
           </div>
         </div>

@@ -23,12 +23,26 @@ export default function ExplorePage() {
     try {
       setLoading(true);
       setError(null);
-      
-      const response = await groupsAPI.getAll();
-      
-      if (response.success && response.data) {
+
+      // Fetch all groups and user's groups in parallel
+      const [allGroupsResponse, userGroupsResponse] = await Promise.all([
+        groupsAPI.getAll(),
+        groupsAPI.getMine()
+      ]);
+
+      if (allGroupsResponse.success && allGroupsResponse.data) {
+        // Get user's current group IDs to exclude them
+        const userGroupIds = new Set(
+          (userGroupsResponse.success ? userGroupsResponse.data : []).map(g => g.groupid)
+        );
+
+        // Filter to show only groups user is NOT a member of
+        const otherGroups = allGroupsResponse.data.filter(
+          group => !userGroupIds.has(group.groupid)
+        );
+
         // Transform backend data to match component props
-        const transformedGroups = response.data.map((group, index) => ({
+        const transformedGroups = otherGroups.map((group, index) => ({
           groupid: group.groupid,
           groupName: group.groupname,
           description: group.description || 'A motshelo savings group',
@@ -42,9 +56,9 @@ export default function ExplorePage() {
           colorIndex: index % 4,
           signatory: false,
           open: group.isactive && (group.membercount || 0) < 12, // Open if under 12 members
-          location: 'Botswana', // Could be added to backend schema
+          location: group.location || 'Botswana',
         }));
-        
+
         setGroups(transformedGroups);
       } else {
         setError('Failed to load groups');

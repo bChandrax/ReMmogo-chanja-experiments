@@ -76,7 +76,8 @@ export const authAPI = {
 
 // Groups API
 export const groupsAPI = {
-  getAll: () => apiRequest('/groups/mine'),
+  getAll: () => apiRequest('/groups'),
+  getMine: () => apiRequest('/groups/mine'),
   getOne: (id) => apiRequest(`/groups/${id}`),
   create: (group) => apiRequest('/groups', { method: 'POST', body: JSON.stringify(group) }),
   update: (id, group) => apiRequest(`/groups/${id}`, { method: 'PUT', body: JSON.stringify(group) }),
@@ -86,6 +87,7 @@ export const groupsAPI = {
 // Members API
 export const membersAPI = {
   getAll: (groupId) => apiRequest(`/members/${groupId}`),
+  getSignatories: (groupId) => apiRequest(`/members/${groupId}/signatories`),
   getOne: (id) => apiRequest(`/members/${id}`),
   create: (groupId, data) => apiRequest(`/members/${groupId}/enroll`, { method: 'POST', body: JSON.stringify(data) }),
   update: (id, member) => apiRequest(`/members/${id}`, { method: 'PUT', body: JSON.stringify(member) }),

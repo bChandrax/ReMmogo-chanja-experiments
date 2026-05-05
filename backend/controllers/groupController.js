@@ -50,12 +50,15 @@ exports.getMyGroups = async (req, res) => {
   }
 };
 
-// GET ALL GROUPS (public listing)
+// GET ALL GROUPS (public listing - viewable by all users)
 exports.getAllGroups = async (req, res) => {
   try {
     const result = await db.query(
-      `SELECT groupid, groupname, description, monthlycontribution, yearstartdate, yearenddate, createdat
-       FROM motshelogroups WHERE isactive = true`
+      `SELECT mg.*,
+         (SELECT COUNT(*) FROM groupmembers WHERE groupid = mg.groupid AND isactive = true) AS membercount
+       FROM motshelogroups mg 
+       WHERE mg.isactive = true
+       ORDER BY mg.createdat DESC`
     );
     res.json(result.rows);
   } catch (err) {

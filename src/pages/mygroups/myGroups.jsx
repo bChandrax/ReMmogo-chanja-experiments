@@ -19,9 +19,10 @@ export default function MyGroups() {
     try {
       setLoading(true);
       setError(null);
-      
-      const response = await groupsAPI.getAll();
-      
+
+      // Fetch only groups the user is a member of
+      const response = await groupsAPI.getMine();
+
       if (response.success && response.data) {
         // Transform backend data to match GroupCard props
         const transformedGroups = response.data.map((group, index) => ({
@@ -33,12 +34,12 @@ export default function MyGroups() {
           totalPool: (group.monthlycontribution || 1000) * (group.membercount || 1) * 12,
           interestTarget: 5000,
           interestRaised: Math.floor(Math.random() * 4000) + 500, // Mock until backend provides
-          role: 'Member',
+          role: group.role || 'Member',
           status: group.isactive ? 'Active' : 'Inactive',
           colorIndex: index % 4,
-          signatory: false,
+          signatory: group.role === 'admin',
         }));
-        
+
         setGroups(transformedGroups);
       } else {
         setError('Failed to load groups');
@@ -102,8 +103,8 @@ export default function MyGroups() {
               <h2 className="mg-page-title">My Groups</h2>
               <p className="mg-page-sub">
                 {groups.length === 0 
-                  ? "You are not a member of any groups yet" 
-                  : `You are a member of ${groups.length} motshelo group${groups.length !== 1 ? 's' : ''}`}
+                  ? "No groups yet. Create one or explore existing groups!" 
+                  : `${groups.length} group${groups.length !== 1 ? 's' : ''} available`}
               </p>
             </div>
             <div className="mg-header-actions">
