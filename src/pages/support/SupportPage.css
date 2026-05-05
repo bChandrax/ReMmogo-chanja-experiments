@@ -248,16 +248,18 @@
 .faq-answer {
   max-height: 0;
   overflow: hidden;
-  transition: max-height 0.35s ease;
+  transition: max-height 0.35s ease, padding 0.35s ease;
   padding: 0 24px;
   font-size: 14px;
   color: #666;
   line-height: 1.7;
+  opacity: 0;
 }
 
 .faq-item.open .faq-answer {
-  max-height: 400px;
+  max-height: 500px;
   padding: 0 24px 24px;
+  opacity: 1;
 }
 
 /* ================================

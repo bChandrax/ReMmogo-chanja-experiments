@@ -20,6 +20,10 @@ const FAQS = [
       {
         question: "How do I invite members to my group?",
         answer: "Once your group is created, go to the group page and click 'Invite Members'. You can send invitations via email, SMS, or share a unique group link. Members can request to join or be directly added based on your group settings."
+      },
+      {
+        question: "What information do I need to register?",
+        answer: "You'll need a valid email address, phone number, and your national ID number. Registration is free and only takes a few minutes. Once registered, you can create or join motshelo groups immediately."
       }
     ]
   },
@@ -38,6 +42,10 @@ const FAQS = [
       {
         question: "Can I contribute extra amounts?",
         answer: "Yes! Many members choose to contribute additional amounts beyond the required monthly contribution. Extra contributions can help you earn more interest and increase your borrowing limit."
+      },
+      {
+        question: "What payment methods are accepted?",
+        answer: "ReMmogo supports bank transfers, mobile money (Orange Money, MyZaka, eWallet), and cash deposits. Upload proof of payment in the app and signatories will verify the transaction."
       }
     ]
   },
@@ -56,6 +64,10 @@ const FAQS = [
       {
         question: "What happens if I default on a loan?",
         answer: "Defaulting on a loan affects your credit within the group and may result in penalties. The group may use your contributions to recover the outstanding amount. In severe cases, membership may be terminated."
+      },
+      {
+        question: "Can I repay my loan early?",
+        answer: "Yes! Early repayment is encouraged and may reduce the total interest you pay. Some groups offer discounts for early repayment. Check with your group's specific policies."
       }
     ]
   },
@@ -74,6 +86,10 @@ const FAQS = [
       {
         question: "How do I change my password?",
         answer: "Go to Settings > Security to change your password. For added security, we recommend enabling two-factor authentication (2FA) which adds an extra layer of protection to your account."
+      },
+      {
+        question: "What if I forget my login details?",
+        answer: "Click 'Forgot Password' on the login page and enter your email. We'll send you a password reset link. If you've forgotten your email, contact support with your national ID for verification."
       }
     ]
   }
