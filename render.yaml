@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: re-mmogo-api
+    env: node
+    buildCommand: cd backend && npm install
+    startCommand: cd backend && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5175
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: re-mmogo-db
+          property: connectionString
+    database:
+      name: re-mmogo-db
+      databaseName: remmogo
+      plan: starter

@@ -1,82 +1,133 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import SideBar from '../../components/sideBar/sideBar';
 import './ExplorePage.css';
 import DashboardNavBar from '../../components/NavBar/DashboardNavBar';
 import GroupCard from '../../components/GroupCard/GroupCard';
-
-const OPEN_GROUPS = [
-  {
-    groupName: 'Pula Savings Collective',
-    description: 'Open to professionals in Gaborone. Strong track record since 2021.',
-    memberCount: 10,
-    monthlyContribution: 1000,
-    totalPool: 120000,
-    interestTarget: 5000,
-    interestRaised: 4100,
-    role: 'Open',
-    status: 'Active',
-    colorIndex: 0,
-    signatory: false,
-    open: true,
-    location: 'Gaborone',
-  },
-  {
-    groupName: 'Molapo Community Fund',
-    description: 'Neighbourhood group open to Molapo residents. 2 spots available.',
-    memberCount: 9,
-    monthlyContribution: 1000,
-    totalPool: 108000,
-    interestTarget: 5000,
-    interestRaised: 2700,
-    role: 'Open',
-    status: 'Active',
-    colorIndex: 1,
-    signatory: false,
-    open: true,
-    location: 'Molapo, Gaborone',
-  },
-  {
-    groupName: 'Serowe Solidarity Group',
-    description: 'Motshelo for residents of Serowe and surrounds. Monthly meetings.',
-    memberCount: 7,
-    monthlyContribution: 1000,
-    totalPool: 84000,
-    interestTarget: 5000,
-    interestRaised: 1200,
-    role: 'Open',
-    status: 'Active',
-    colorIndex: 2,
-    signatory: false,
-    open: true,
-    location: 'Serowe',
-  },
-  {
-    groupName: 'Tlotlo Wealth Circle',
-    description: 'Focused on long-term savings and peer accountability.',
-    memberCount: 11,
-    monthlyContribution: 1000,
-    totalPool: 132000,
-    interestTarget: 5000,
-    interestRaised: 4900,
-    role: 'Open',
-    status: 'Active',
-    colorIndex: 3,
-    signatory: false,
-    open: false,
-    location: 'Francistown',
-  },
-];
+import { groupsAPI, membersAPI } from '../../services/api';
 
 export default function ExplorePage() {
+  const [groups, setGroups] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
   const [joinGroup, setJoinGroup] = useState(null);
+  const [joinMessage, setJoinMessage] = useState('');
+  const [joining, setJoining] = useState(false);
 
-  const filtered = OPEN_GROUPS.filter(
+  useEffect(() => {
+    fetchGroups();
+  }, []);
+
+  const fetchGroups = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await groupsAPI.getAll();
+      
+      if (response.success && response.data) {
+        // Transform backend data to match component props
+        const transformedGroups = response.data.map((group, index) => ({
+          groupid: group.groupid,
+          groupName: group.groupname,
+          description: group.description || 'A motshelo savings group',
+          memberCount: group.membercount || 1,
+          monthlyContribution: group.monthlycontribution || 1000,
+          totalPool: (group.monthlycontribution || 1000) * (group.membercount || 1) * 12,
+          interestTarget: 5000,
+          interestRaised: Math.floor(Math.random() * 4000) + 500,
+          role: 'Open',
+          status: group.isactive ? 'Active' : 'Inactive',
+          colorIndex: index % 4,
+          signatory: false,
+          open: group.isactive && (group.membercount || 0) < 12, // Open if under 12 members
+          location: 'Botswana', // Could be added to backend schema
+        }));
+        
+        setGroups(transformedGroups);
+      } else {
+        setError('Failed to load groups');
+      }
+    } catch (err) {
+      console.error('Error fetching groups:', err);
+      setError('Unable to connect to server');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filtered = groups.filter(
     (g) =>
       g.groupName.toLowerCase().includes(search.toLowerCase()) ||
       g.location.toLowerCase().includes(search.toLowerCase())
   );
+
+  const handleJoinRequest = async () => {
+    if (!joinGroup) return;
+    
+    try {
+      setJoining(true);
+      
+      // Get current user from localStorage
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert('Please login to join a group');
+        window.location.href = '/login';
+        return;
+      }
+      
+      // Send join request to backend
+      const response = await membersAPI.create(joinGroup.groupid, {
+        message: joinMessage || null,
+      });
+      
+      if (response.success) {
+        alert('Join request sent successfully! The signatories will review your request.');
+        setJoinGroup(null);
+        setJoinMessage('');
+      } else {
+        alert(response.error || 'Failed to send join request');
+      }
+    } catch (err) {
+      console.error('Error joining group:', err);
+      alert('Failed to send join request. Please try again.');
+    } finally {
+      setJoining(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="dash">
+        <SideBar />
+        <div className="main">
+          <DashboardNavBar />
+          <div className="ep-content">
+            <div className="loading-state">Loading groups...</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="dash">
+        <SideBar />
+        <div className="main">
+          <DashboardNavBar />
+          <div className="ep-content">
+            <div className="error-state">
+              <h3>Oops! Something went wrong</h3>
+              <p>{error}</p>
+              <button onClick={fetchGroups} className="ep-retry-btn">Try Again</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="dash">
@@ -121,26 +172,28 @@ export default function ExplorePage() {
           </div>
 
           {/* Cards grid */}
-          <div className="ep-groups-grid">
-            {filtered.map((g, i) => (
-              <div key={i} className="ep-card-wrap">
-                <GroupCard {...g} colorIndex={i} />
-                <div className="ep-card-meta">
-                  <span className="ep-location">📍 {g.location}</span>
-                  {g.open ? (
-                    <button className="ep-join-btn" onClick={() => setJoinGroup(g)}>
-                      Request to Join
-                    </button>
-                  ) : (
-                    <span className="ep-closed-badge">Full</span>
-                  )}
+          {filtered.length > 0 ? (
+            <div className="ep-groups-grid">
+              {filtered.map((g, i) => (
+                <div key={g.groupid} className="ep-card-wrap">
+                  <GroupCard {...g} colorIndex={i} />
+                  <div className="ep-card-meta">
+                    <span className="ep-location">📍 {g.location}</span>
+                    {g.open ? (
+                      <button className="ep-join-btn" onClick={() => setJoinGroup(g)}>
+                        Request to Join
+                      </button>
+                    ) : (
+                      <span className="ep-closed-badge">Full</span>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-
-          {filtered.length === 0 && (
-            <div className="ep-empty">No groups match your search. <Link to="/create-group">Start your own →</Link></div>
+              ))}
+            </div>
+          ) : (
+            <div className="ep-empty">
+              No groups match your search. <Link to="/createGroup">Start your own →</Link>
+            </div>
           )}
 
         </div>
@@ -160,8 +213,19 @@ export default function ExplorePage() {
                 Your request will be reviewed by the group signatories. If approved, you'll be enrolled and expected to contribute P1,000 on the 1st of each month.
               </p>
               <label>Message to signatories (optional)</label>
-              <textarea placeholder="Introduce yourself or explain why you'd like to join…" rows={3} />
-              <button className="ep-modal-submit" onClick={() => setJoinGroup(null)}>Send Request</button>
+              <textarea
+                placeholder="Introduce yourself or explain why you'd like to join…"
+                rows={3}
+                value={joinMessage}
+                onChange={(e) => setJoinMessage(e.target.value)}
+              />
+              <button 
+                className="ep-modal-submit" 
+                onClick={handleJoinRequest}
+                disabled={joining}
+              >
+                {joining ? 'Sending...' : 'Send Request'}
+              </button>
             </div>
           </div>
         </div>

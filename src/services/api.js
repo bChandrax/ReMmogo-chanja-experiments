@@ -1,175 +1,175 @@
-// ─── Base URL ───────────────────────────────────────────────
-// During development this points to your local backend.
-// Before deploying the frontend, change this to your Render URL:
-//   const API_URL = "https://remmogo-backend.onrender.com/api";
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+// API URL configuration
+// Uses VITE_API_URL from environment variables (set in Vercel dashboard)
+// Falls back to localhost for development
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5175/api";
 
-// ─── Helper ─────────────────────────────────────────────────
-const getToken = () => localStorage.getItem("token");
+// Get token from localStorage
+const getToken = () => localStorage.getItem('token');
 
-const authHeaders = () => ({
-  "Content-Type": "application/json",
-  Authorization: `Bearer ${getToken()}`,
-});
+// Generic API request function with JWT auth and better error handling
+async function apiRequest(endpoint, options = {}) {
+  const token = getToken();
 
-const handle = async (res) => {
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || "Something went wrong");
-  return data;
+  const config = {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token && { Authorization: `Bearer ${token}` }),
+      ...options.headers,
+    },
+  };
+
+  try {
+    const response = await fetch(`${API_URL}${endpoint}`, config);
+
+    // Handle 401 unauthorized - token expired
+    if (response.status === 401) {
+      localStorage.removeItem('token');
+      if (!window.location.pathname.includes('/login')) {
+        window.location.href = '/login';
+      }
+      throw new Error('Session expired. Please login again.');
+    }
+
+    // Handle 403 forbidden
+    if (response.status === 403) {
+      throw new Error('You do not have permission to perform this action.');
+    }
+
+    // Handle 500 server errors
+    if (response.status === 500) {
+      console.error('Server error - please try again later');
+      throw new Error('Server error. Please try again later.');
+    }
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return { success: false, error: data.error || 'Request failed', status: response.status, details: data };
+    }
+
+    return { success: true, data, status: response.status };
+  } catch (error) {
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      const errorMsg = 'Unable to connect to server. Please ensure the backend is running.';
+      console.error('❌ ' + errorMsg);
+      return { success: false, error: errorMsg, status: 0 };
+    }
+    
+    if (error.message.includes('CORS') || error.message.includes('preflight')) {
+      const errorMsg = 'Connection blocked by CORS policy. Check backend configuration.';
+      console.error('❌ ' + errorMsg);
+      return { success: false, error: errorMsg, status: 0 };
+    }
+    
+    console.error('❌ API Error:', error.message);
+    return { success: false, error: error.message, status: 0 };
+  }
+}
+
+// Auth API
+export const authAPI = {
+  register: (data) => apiRequest('/auth/register', { method: 'POST', body: JSON.stringify(data) }),
+  login: (email, password) => apiRequest('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }),
+  getProfile: () => apiRequest('/auth/profile'),
 };
 
-// ─── AUTH ────────────────────────────────────────────────────
-export const register = async ({ firstName, lastName, email, password, phoneNumber, nationalID }) =>
-  handle(await fetch(`${API_URL}/auth/register`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ firstName, lastName, email, password, phoneNumber, nationalID }),
-  }));
-
-export const login = async ({ email, password }) =>
-  handle(await fetch(`${API_URL}/auth/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
-  }));
-
-export const getProfile = async () =>
-  handle(await fetch(`${API_URL}/auth/profile`, { headers: authHeaders() }));
-
-// ─── GROUPS ─────────────────────────────────────────────────
-export const createGroup = async (data) =>
-  handle(await fetch(`${API_URL}/groups`, {
-    method: "POST",
-    headers: authHeaders(),
-    body: JSON.stringify(data),
-  }));
-
-export const getMyGroups = async () =>
-  handle(await fetch(`${API_URL}/groups/mine`, { headers: authHeaders() }));
-
-export const getAllGroups = async () =>
-  handle(await fetch(`${API_URL}/groups`, { headers: authHeaders() }));
-
-export const getGroup = async (groupId) =>
-  handle(await fetch(`${API_URL}/groups/${groupId}`, { headers: authHeaders() }));
-
-export const updateGroup = async (groupId, data) =>
-  handle(await fetch(`${API_URL}/groups/${groupId}`, {
-    method: "PUT",
-    headers: authHeaders(),
-    body: JSON.stringify(data),
-  }));
-
-export const generateContributions = async (groupId, periodMonth) =>
-  handle(await fetch(`${API_URL}/groups/${groupId}/generate-contributions`, {
-    method: "POST",
-    headers: authHeaders(),
-    body: JSON.stringify({ periodMonth }),
-  }));
-
-export const applyMonthlyInterest = async (groupId, periodMonth) =>
-  handle(await fetch(`${API_URL}/groups/${groupId}/apply-interest`, {
-    method: "POST",
-    headers: authHeaders(),
-    body: JSON.stringify({ periodMonth }),
-  }));
-
-// ─── MEMBERS ─────────────────────────────────────────────────
-export const enrollMember = async (groupId, { userId, role }) =>
-  handle(await fetch(`${API_URL}/members/${groupId}/enroll`, {
-    method: "POST",
-    headers: authHeaders(),
-    body: JSON.stringify({ userId, role }),
-  }));
-
-export const getGroupMembers = async (groupId) =>
-  handle(await fetch(`${API_URL}/members/${groupId}`, { headers: authHeaders() }));
-
-export const getAllMemberBalances = async (groupId) =>
-  handle(await fetch(`${API_URL}/members/${groupId}/balances/all`, { headers: authHeaders() }));
-
-export const getMemberBalance = async (groupId, memberId) =>
-  handle(await fetch(`${API_URL}/members/${groupId}/balances/${memberId}`, { headers: authHeaders() }));
-
-export const removeMember = async (groupId, memberId) =>
-  handle(await fetch(`${API_URL}/members/${groupId}/${memberId}`, {
-    method: "DELETE",
-    headers: authHeaders(),
-  }));
-
-// ─── CONTRIBUTIONS ───────────────────────────────────────────
-export const getGroupContributions = async (groupId, month = null) => {
-  const url = month
-    ? `${API_URL}/contributions/${groupId}?month=${month}`
-    : `${API_URL}/contributions/${groupId}`;
-  return handle(await fetch(url, { headers: authHeaders() }));
+// Groups API
+export const groupsAPI = {
+  getAll: () => apiRequest('/groups'),
+  getOne: (id) => apiRequest(`/groups/${id}`),
+  create: (group) => apiRequest('/groups', { method: 'POST', body: JSON.stringify(group) }),
+  update: (id, group) => apiRequest(`/groups/${id}`, { method: 'PUT', body: JSON.stringify(group) }),
+  delete: (id) => apiRequest(`/groups/${id}`, { method: 'DELETE' }),
 };
 
-export const getMyContributions = async (groupId) =>
-  handle(await fetch(`${API_URL}/contributions/${groupId}/mine`, { headers: authHeaders() }));
-
-export const submitContribution = async (contributionId, { amountPaid, proofOfPayment }) =>
-  handle(await fetch(`${API_URL}/contributions/${contributionId}/submit`, {
-    method: "PUT",
-    headers: authHeaders(),
-    body: JSON.stringify({ amountPaid, proofOfPayment }),
-  }));
-
-export const approveContribution = async (contributionId, { decision, decisionNote, groupId }) =>
-  handle(await fetch(`${API_URL}/contributions/${contributionId}/approve`, {
-    method: "PUT",
-    headers: authHeaders(),
-    body: JSON.stringify({ decision, decisionNote, groupId }),
-  }));
-
-// ─── LOANS ───────────────────────────────────────────────────
-export const requestLoan = async ({ groupId, principalAmount, notes }) =>
-  handle(await fetch(`${API_URL}/loans/request`, {
-    method: "POST",
-    headers: authHeaders(),
-    body: JSON.stringify({ groupId, principalAmount, notes }),
-  }));
-
-export const getGroupLoans = async (groupId, status = null) => {
-  const url = status
-    ? `${API_URL}/loans/${groupId}?status=${status}`
-    : `${API_URL}/loans/${groupId}`;
-  return handle(await fetch(url, { headers: authHeaders() }));
+// Members API
+export const membersAPI = {
+  getAll: (groupId) => apiRequest(`/members/${groupId}`),
+  getOne: (id) => apiRequest(`/members/${id}`),
+  create: (groupId, data) => apiRequest(`/members/${groupId}/enroll`, { method: 'POST', body: JSON.stringify(data) }),
+  update: (id, member) => apiRequest(`/members/${id}`, { method: 'PUT', body: JSON.stringify(member) }),
+  delete: (groupId, memberId) => apiRequest(`/members/${groupId}/${memberId}`, { method: 'DELETE' }),
 };
 
-export const getMyLoans = async (groupId) =>
-  handle(await fetch(`${API_URL}/loans/${groupId}/mine`, { headers: authHeaders() }));
+// Contributions API
+export const contributionsAPI = {
+  getAll: (groupId) => {
+    if (!groupId || groupId === 'undefined') {
+      console.warn('contributionsAPI.getAll called with invalid groupId:', groupId);
+      return Promise.resolve({ success: false, error: 'Group ID is required' });
+    }
+    return apiRequest(`/contributions/${groupId}`);
+  },
+  getMine: (groupId) => {
+    if (!groupId || groupId === 'undefined') {
+      console.warn('contributionsAPI.getMine called with invalid groupId:', groupId);
+      return Promise.resolve({ success: false, error: 'Group ID is required' });
+    }
+    return apiRequest(`/contributions/${groupId}/mine`);
+  },
+  create: (contribution) => apiRequest('/contributions', { method: 'POST', body: JSON.stringify(contribution) }),
+  update: (id, contribution) => apiRequest(`/contributions/${id}`, { method: 'PUT', body: JSON.stringify(contribution) }),
+  delete: (id) => apiRequest(`/contributions/${id}`, { method: 'DELETE' }),
+};
 
-export const approveLoan = async (loanId, { decision, decisionNote, groupId }) =>
-  handle(await fetch(`${API_URL}/loans/${loanId}/approve`, {
-    method: "PUT",
-    headers: authHeaders(),
-    body: JSON.stringify({ decision, decisionNote, groupId }),
-  }));
+// Loans API
+export const loansAPI = {
+  getAll: (groupId) => {
+    if (!groupId || groupId === 'undefined') {
+      console.warn('loansAPI.getAll called with invalid groupId:', groupId);
+      return Promise.resolve({ success: false, error: 'Group ID is required' });
+    }
+    return apiRequest(`/loans/${groupId}`);
+  },
+  getMine: (groupId) => {
+    if (!groupId || groupId === 'undefined') {
+      console.warn('loansAPI.getMine called with invalid groupId:', groupId);
+      return Promise.resolve({ success: false, error: 'Group ID is required' });
+    }
+    return apiRequest(`/loans/${groupId}/mine`);
+  },
+  getOne: (id) => apiRequest(`/loans/${id}`),
+  create: (loan) => apiRequest('/loans', { method: 'POST', body: JSON.stringify(loan) }),
+  update: (id, loan) => apiRequest(`/loans/${id}`, { method: 'PUT', body: JSON.stringify(loan) }),
+  delete: (id) => apiRequest(`/loans/${id}`, { method: 'DELETE' }),
+};
 
-export const submitRepayment = async (loanId, { amountPaid, proofOfPayment }) =>
-  handle(await fetch(`${API_URL}/loans/${loanId}/repay`, {
-    method: "POST",
-    headers: authHeaders(),
-    body: JSON.stringify({ amountPaid, proofOfPayment }),
-  }));
+// Reports API
+export const reportsAPI = {
+  getDashboard: () => apiRequest('/reports/dashboard'),
+  getActivity: (limit = 20) => apiRequest(`/reports/activity?limit=${limit}`),
+};
 
-export const approveRepayment = async (repaymentId, { decision, decisionNote, groupId }) =>
-  handle(await fetch(`${API_URL}/loans/repayments/${repaymentId}/approve`, {
-    method: "PUT",
-    headers: authHeaders(),
-    body: JSON.stringify({ decision, decisionNote, groupId }),
-  }));
+// Messages API
+export const messagesAPI = {
+  getAll: () => apiRequest('/messages'),
+  getMessages: (conversationId) => apiRequest(`/messages/${conversationId}/messages`),
+  send: (conversationId, content, messagetype = 'text') =>
+    apiRequest(`/messages/${conversationId}/messages`, {
+      method: 'POST',
+      body: JSON.stringify({ conversationId, content, messagetype }),
+    }),
+  markAsRead: (conversationId) => apiRequest(`/messages/${conversationId}/read`, { method: 'POST' }),
+  create: (data) => apiRequest('/messages', { method: 'POST', body: JSON.stringify(data) }),
+  getGroupConversation: (groupId) => apiRequest(`/messages/group/${groupId}`, { method: 'POST' }),
+  getUnreadCount: () => apiRequest('/messages/unread'),
+  delete: (messageId) => apiRequest(`/messages/messages/${messageId}`, { method: 'DELETE' }),
+};
 
-export const getLoanInterest = async (loanId) =>
-  handle(await fetch(`${API_URL}/loans/${loanId}/interest`, { headers: authHeaders() }));
+// Token management
+export const setToken = (token) => localStorage.setItem('token', token);
+export const removeToken = () => localStorage.removeItem('token');
 
-// ─── REPORTS ─────────────────────────────────────────────────
-export const getYearEndReport = async (groupId) =>
-  handle(await fetch(`${API_URL}/reports/${groupId}/year-end`, { headers: authHeaders() }));
+export const isAuthenticated = () => {
+  const token = getToken();
+  if (!token) return false;
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.exp * 1000 > Date.now();
+  } catch {
+    return false;
+  }
+};
 
-export const getGroupSummary = async (groupId) =>
-  handle(await fetch(`${API_URL}/reports/${groupId}/summary`, { headers: authHeaders() }));
-
-export const getMemberStatement = async (groupId, memberId) =>
-  handle(await fetch(`${API_URL}/reports/${groupId}/member/${memberId}`, { headers: authHeaders() }));
+export default apiRequest;

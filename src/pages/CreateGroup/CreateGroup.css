@@ -276,3 +276,151 @@ body {
   cursor: pointer;
   font-family: inherit;
 }
+
+.cg-success-btn-secondary:hover { background: #e0ddd5; }
+
+/* Error banner */
+.cg-error-banner {
+  background: #fce8e8;
+  border: 0.5px solid #f0c0c0;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 11px;
+  color: #c0392b;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cg-error-banner button {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: #c0392b;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+/* Disabled button state */
+.cg-btn-back:disabled,
+.cg-btn-next:disabled,
+.cg-btn-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ================================
+   Responsive Design
+   ================================ */
+
+@media (max-width: 1024px) {
+  .cg-content {
+    padding: 16px;
+  }
+  
+  .cg-field-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .cg-content {
+    padding: 12px;
+    margin-top: 2vh;
+  }
+  
+  .cg-page-header {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .cg-stepper {
+    padding: 10px 14px;
+    overflow-x: auto;
+  }
+  
+  .cg-step-label {
+    font-size: 10px;
+  }
+  
+  .cg-step-circle {
+    width: 22px;
+    height: 22px;
+    font-size: 10px;
+  }
+  
+  .cg-form-card {
+    padding: 16px;
+  }
+  
+  .cg-review-grid {
+    padding: 12px;
+  }
+  
+  .cg-review-row {
+    flex-direction: column;
+    gap: 4px;
+    padding: 10px 0;
+  }
+  
+  .cg-form-nav {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .cg-nav-spacer {
+    display: none;
+  }
+  
+  .cg-btn-back,
+  .cg-btn-next,
+  .cg-btn-submit {
+    width: 100%;
+    text-align: center;
+    justify-content: center;
+  }
+  
+  .cg-success-card {
+    padding: 30px 20px;
+  }
+  
+  .cg-success-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .cg-success-btn-primary,
+  .cg-success-btn-secondary {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .cg-content {
+    padding: 8px;
+  }
+  
+  .cg-page-title {
+    font-size: 14px;
+  }
+  
+  .cg-page-sub {
+    font-size: 10px;
+  }
+  
+  .cg-back-link {
+    padding: 5px 10px;
+    font-size: 10px;
+  }
+  
+  .cg-step-label {
+    display: none;
+  }
+  
+  .cg-field input,
+  .cg-field select,
+  .cg-field textarea {
+    font-size: 11px;
+    padding: 8px 10px;
+  }
+}

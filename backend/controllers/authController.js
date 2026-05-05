@@ -50,21 +50,44 @@ exports.login = async (req, res) => {
   }
 
   try {
+    console.log('🔐 Login attempt for:', email);
+    
     const result = await db.query("SELECT * FROM users WHERE email = $1 AND isactive = true", [email]);
     const user = result.rows[0];
 
-    if (!user) return res.status(400).json({ error: "Invalid credentials" });
+    if (!user) {
+      console.log('❌ User not found:', email);
+      return res.status(400).json({ error: "Invalid credentials" });
+    }
 
+    console.log('✅ User found, checking password...');
     const isMatch = await bcrypt.compare(password, user.passwordhash);
-    if (!isMatch) return res.status(400).json({ error: "Invalid credentials" });
+    
+    if (!isMatch) {
+      console.log('❌ Password mismatch for:', email);
+      return res.status(400).json({ error: "Invalid credentials" });
+    }
 
+    console.log('✅ Password matched, generating token...');
+    
+    // Check JWT_SECRET is set
+    if (!process.env.JWT_SECRET) {
+      console.error('❌ JWT_SECRET not configured!');
+      return res.status(500).json({ error: "Server configuration error" });
+    }
+    
     const token = jwt.sign({ id: user.userid, email: user.email }, process.env.JWT_SECRET, { expiresIn: "1d" });
 
+    console.log('✅ Login successful for:', email);
+    
     res.json({
       token,
       user: { id: user.userid, firstName: user.firstname, lastName: user.lastname, email: user.email },
     });
   } catch (err) {
+    console.error('❌ Login error:', err);
+    console.error('Error details:', err.message);
+    console.error('Stack trace:', err.stack);
     res.status(500).json({ error: err.message });
   }
 };

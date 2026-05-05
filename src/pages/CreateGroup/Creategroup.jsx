@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import SideBar from '../../components/sideBar/sideBar';
 import DashboardNavBar from '../../components/NavBar/DashboardNavBar';
+import { groupsAPI } from '../../services/api';
 import './CreateGroup.css';
 
 const STEPS = ['Group Details', 'Rules & Settings', 'Signatories', 'Review'];
@@ -22,10 +23,58 @@ export default function CreateGroup() {
     isOpen: true,
   });
   const [submitted, setSubmitted] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [error, setError] = useState(null);
 
   const update = (key, val) => setForm((f) => ({ ...f, [key]: val }));
 
-  const handleSubmit = () => setSubmitted(true);
+  const handleSubmit = async () => {
+    try {
+      setCreating(true);
+      setError(null);
+
+      // Validate required fields
+      if (!form.name) {
+        setError('Group name is required');
+        return;
+      }
+      if (!form.signatory1 || !form.signatory2) {
+        setError('Both signatories are required');
+        return;
+      }
+
+      // Prepare data for backend
+      const groupData = {
+        groupname: form.name,
+        description: form.description || null,
+        monthlycontribution: form.monthlyContribution,
+        requiredinterest: form.interestTarget,
+        loaninterestrate: 20, // 20% monthly interest
+        yearstartdate: form.startMonth ? new Date(form.startMonth).toISOString() : new Date().toISOString(),
+        yearenddate: form.startMonth 
+          ? new Date(new Date(form.startMonth).setFullYear(new Date(form.startMonth).getFullYear() + 1)).toISOString()
+          : new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString(),
+        maxmembers: form.maxMembers,
+        isactive: true,
+        isopen: form.isOpen,
+        location: form.location || null,
+        signatories: [form.signatory1, form.signatory2],
+      };
+
+      const response = await groupsAPI.create(groupData);
+
+      if (response.success) {
+        setSubmitted(true);
+      } else {
+        setError(response.error || 'Failed to create group');
+      }
+    } catch (err) {
+      console.error('Error creating group:', err);
+      setError('Failed to create group. Please try again.');
+    } finally {
+      setCreating(false);
+    }
+  };
 
   if (submitted) {
     return (
@@ -82,6 +131,13 @@ export default function CreateGroup() {
 
           {/* Form card */}
           <div className="cg-form-card">
+
+            {error && (
+              <div className="cg-error-banner">
+                <span>⚠</span> {error}
+                <button onClick={() => setError(null)}>✕</button>
+              </div>
+            )}
 
             {/* Step 0: Group Details */}
             {step === 0 && (
@@ -216,16 +272,22 @@ export default function CreateGroup() {
             {/* Navigation */}
             <div className="cg-form-nav">
               {step > 0 && (
-                <button className="cg-btn-back" onClick={() => setStep((s) => s - 1)}>← Back</button>
+                <button className="cg-btn-back" onClick={() => setStep((s) => s - 1)} disabled={creating}>
+                  ← Back
+                </button>
               )}
               <div className="cg-nav-spacer" />
               {step < STEPS.length - 1 ? (
-                <button className="cg-btn-next" onClick={() => setStep((s) => s + 1)}>
+                <button className="cg-btn-next" onClick={() => setStep((s) => s + 1)} disabled={creating}>
                   Next →
                 </button>
               ) : (
-                <button className="cg-btn-submit" onClick={handleSubmit}>
-                  Create Group
+                <button 
+                  className="cg-btn-submit" 
+                  onClick={handleSubmit}
+                  disabled={creating || !form.name || !form.signatory1 || !form.signatory2}
+                >
+                  {creating ? 'Creating...' : 'Create Group'}
                 </button>
               )}
             </div>

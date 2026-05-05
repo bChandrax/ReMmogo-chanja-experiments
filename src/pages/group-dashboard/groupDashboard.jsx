@@ -1,35 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import SideBar from '../../components/sideBar/sideBar';
 import DashboardNavBar from '../../components/NavBar/DashboardNavBar';
+import { groupsAPI, membersAPI, contributionsAPI, loansAPI } from '../../services/api';
 import './grp-dash.css';
-
-const GROUP = {
-  name: 'Botho Savings Circle',
-  description: 'A trusted circle of 8 friends saving together since 2022.',
-  memberCount: 8,
-  monthlyContribution: 1000,
-  totalPool: 96000,
-  interestTarget: 5000,
-  year: 2026,
-  signatories: ['Kabo Moeng', 'Selepe Tau'],
-};
-
-const MEMBERS = [
-  { name: 'Kabo Moeng', role: 'Signatory', contributions: 4, interestRaised: 1200, loanBalance: 0, status: 'Good Standing' },
-  { name: 'Selepe Tau', role: 'Signatory', contributions: 4, interestRaised: 900, loanBalance: 3200, status: 'Good Standing' },
-  { name: 'Neo Sithole', role: 'Member', contributions: 3, interestRaised: 600, loanBalance: 0, status: 'Good Standing' },
-  { name: 'Thabo Kerileng', role: 'Member', contributions: 2, interestRaised: 400, loanBalance: 5000, status: 'Loan Active' },
-  { name: 'Lorato Dube', role: 'Member', contributions: 4, interestRaised: 800, loanBalance: 0, status: 'Good Standing' },
-  { name: 'Mpho Rammala', role: 'Member', contributions: 4, interestRaised: 700, loanBalance: 0, status: 'Good Standing' },
-  { name: 'Onalenna Jiya', role: 'Member', contributions: 3, interestRaised: 500, loanBalance: 0, status: 'Good Standing' },
-  { name: 'Bame Motsepe', role: 'Member', contributions: 1, interestRaised: 200, loanBalance: 0, status: 'Behind' },
-];
-
-const PENDING_APPROVALS = [
-  { type: 'Loan Request', member: 'Neo Sithole', amount: 3000, date: 'May 1, 2026', approvals: 1 },
-  { type: 'Contribution', member: 'Onalenna Jiya', amount: 1000, date: 'May 2, 2026', approvals: 0 },
-  { type: 'Loan Repayment', member: 'Selepe Tau', amount: 1640, date: 'Apr 30, 2026', approvals: 1 },
-];
 
 const STATUS_STYLE = {
   'Good Standing': { bg: '#e8f0e0', color: '#2c3e1f' },
@@ -40,11 +14,187 @@ const STATUS_STYLE = {
 const TABS = ['Overview', 'Members', 'Approvals', 'Reports'];
 
 export default function GroupDashboard() {
+  const [searchParams] = useSearchParams();
+  const groupId = searchParams.get('id');
+  
   const [tab, setTab] = useState('Overview');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  
+  const [group, setGroup] = useState(null);
+  const [members, setMembers] = useState([]);
+  const [contributions, setContributions] = useState([]);
+  const [loans, setLoans] = useState([]);
+  const [pendingApprovals, setPendingApprovals] = useState([]);
 
-  const totalContributions = MEMBERS.reduce((s, m) => s + m.contributions * 1000, 0);
-  const totalInterest = MEMBERS.reduce((s, m) => s + m.interestRaised, 0);
-  const totalLoans = MEMBERS.reduce((s, m) => s + m.loanBalance, 0);
+  useEffect(() => {
+    if (groupId) {
+      fetchGroupData();
+    }
+  }, [groupId]);
+
+  const fetchGroupData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Fetch group details
+      const groupRes = await groupsAPI.getOne(groupId);
+      if (groupRes.success && groupRes.data) {
+        setGroup(groupRes.data);
+      } else {
+        setError('Failed to load group details');
+        return;
+      }
+
+      // Fetch members
+      const membersRes = await membersAPI.getAll(groupId);
+      if (membersRes.success && membersRes.data) {
+        setMembers(membersRes.data);
+      }
+
+      // Fetch contributions
+      const contribRes = await contributionsAPI.getAll(groupId);
+      if (contribRes.success && contribRes.data) {
+        setContributions(contribRes.data);
+      }
+
+      // Fetch loans
+      const loansRes = await loansAPI.getAll(groupId);
+      if (loansRes.success && loansRes.data) {
+        setLoans(loansRes.data);
+      }
+
+      // Build pending approvals from contributions and loans
+      const approvals = [];
+      
+      // Add pending loan approvals
+      loansRes.data?.forEach(loan => {
+        if (loan.status === 'pending') {
+          approvals.push({
+            type: 'Loan Request',
+            memberId: loan.borrowermemberid,
+            member: loan.borrowername || 'Unknown Member',
+            amount: loan.principalamount,
+            date: loan.createdat ? new Date(loan.createdat).toLocaleDateString('en-GB', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Unknown',
+            approvals: 0,
+            loanId: loan.loanid,
+          });
+        }
+      });
+
+      // Add pending contribution approvals
+      contribRes.data?.forEach(contrib => {
+        if (contrib.status === 'pending') {
+          approvals.push({
+            type: 'Contribution',
+            memberId: contrib.memberid,
+            member: contrib.membername || 'Unknown Member',
+            amount: contrib.amountpaid,
+            date: contrib.updatedat ? new Date(contrib.updatedat).toLocaleDateString('en-GB', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Unknown',
+            approvals: 0,
+            contributionId: contrib.contributionid,
+          });
+        }
+      });
+
+      setPendingApprovals(approvals);
+    } catch (err) {
+      console.error('Error fetching group data:', err);
+      setError('Unable to load group data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleApprove = async (approval) => {
+    try {
+      let response;
+      
+      if (approval.type === 'Loan Request') {
+        response = await loansAPI.update(approval.loanId, {
+          status: 'active',
+        });
+      } else if (approval.type === 'Contribution') {
+        response = await contributionsAPI.update(approval.contributionId, {
+          status: 'paid',
+        });
+      }
+
+      if (response?.success) {
+        alert(`${approval.type} approved successfully`);
+        fetchGroupData(); // Refresh data
+      } else {
+        alert(response?.error || 'Failed to approve');
+      }
+    } catch (err) {
+      console.error('Error approving:', err);
+      alert('Failed to approve. Please try again.');
+    }
+  };
+
+  const handleReject = async (approval) => {
+    try {
+      let response;
+      
+      if (approval.type === 'Loan Request') {
+        response = await loansAPI.update(approval.loanId, {
+          status: 'rejected',
+        });
+      } else if (approval.type === 'Contribution') {
+        response = await contributionsAPI.update(approval.contributionId, {
+          status: 'not_paid',
+        });
+      }
+
+      if (response?.success) {
+        alert(`${approval.type} rejected`);
+        fetchGroupData(); // Refresh data
+      } else {
+        alert(response?.error || 'Failed to reject');
+      }
+    } catch (err) {
+      console.error('Error rejecting:', err);
+      alert('Failed to reject. Please try again.');
+    }
+  };
+
+  // Calculate statistics
+  const totalContributions = members.reduce((sum, m) => sum + (m.contributions || 0) * (group?.monthlycontribution || 1000), 0);
+  const totalInterest = members.reduce((sum, m) => sum + (m.interestraised || 0), 0);
+  const totalLoans = members.reduce((sum, m) => sum + (m.loanbalance || 0), 0);
+
+  if (loading) {
+    return (
+      <div className="dash">
+        <SideBar />
+        <div className="main">
+          <DashboardNavBar />
+          <div className="gd-content">
+            <div className="loading-state">Loading group dashboard...</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !group) {
+    return (
+      <div className="dash">
+        <SideBar />
+        <div className="main">
+          <DashboardNavBar />
+          <div className="gd-content">
+            <div className="error-state">
+              <h3>Oops! Something went wrong</h3>
+              <p>{error || 'Group not found'}</p>
+              <button onClick={fetchGroupData} className="gd-retry-btn">Try Again</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="dash">
@@ -55,16 +205,18 @@ export default function GroupDashboard() {
 
           {/* Group header */}
           <div className="gd-group-header">
-            <div className="gd-group-avatar">BS</div>
+            <div className="gd-group-avatar">
+              {group.groupname.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
+            </div>
             <div className="gd-group-info">
-              <h2 className="gd-group-name">{GROUP.name}</h2>
-              <p className="gd-group-desc">{GROUP.description}</p>
+              <h2 className="gd-group-name">{group.groupname}</h2>
+              <p className="gd-group-desc">{group.description || 'A motshelo savings group'}</p>
               <div className="gd-signatories">
-                Signatories: {GROUP.signatories.join(' · ')}
+                Signatories: Kabo Moeng · Selepe Tau {/* Would need to fetch from backend */}
               </div>
             </div>
             <div className="gd-header-badge">
-              <span className="gd-active-badge">Active</span>
+              <span className="gd-active-badge">{group.isactive ? 'Active' : 'Inactive'}</span>
             </div>
           </div>
 
@@ -77,8 +229,8 @@ export default function GroupDashboard() {
                 onClick={() => setTab(t)}
               >
                 {t}
-                {t === 'Approvals' && PENDING_APPROVALS.length > 0 && (
-                  <span className="gd-tab-badge">{PENDING_APPROVALS.length}</span>
+                {t === 'Approvals' && pendingApprovals.length > 0 && (
+                  <span className="gd-tab-badge">{pendingApprovals.length}</span>
                 )}
               </button>
             ))}
@@ -90,8 +242,8 @@ export default function GroupDashboard() {
               <div className="gd-stats-grid">
                 <div className="gd-stat-card">
                   <span className="gd-stat-label">Total Pool</span>
-                  <span className="gd-stat-value">P{GROUP.totalPool.toLocaleString()}</span>
-                  <span className="gd-stat-sub">{GROUP.memberCount} members × 12 months</span>
+                  <span className="gd-stat-value">P{(group.monthlycontribution || 0 * group.membercount || 0 * 12).toLocaleString()}</span>
+                  <span className="gd-stat-sub">{group.membercount || 0} members × 12 months</span>
                 </div>
                 <div className="gd-stat-card">
                   <span className="gd-stat-label">Contributions Collected</span>
@@ -101,7 +253,7 @@ export default function GroupDashboard() {
                 <div className="gd-stat-card">
                   <span className="gd-stat-label">Interest Raised</span>
                   <span className="gd-stat-value">P{totalInterest.toLocaleString()}</span>
-                  <span className="gd-stat-sub">Target: P{(GROUP.memberCount * GROUP.interestTarget).toLocaleString()}</span>
+                  <span className="gd-stat-sub">Target: P{((group.membercount || 0) * 5000).toLocaleString()}</span>
                 </div>
                 <div className="gd-stat-card">
                   <span className="gd-stat-label">Outstanding Loans</span>
@@ -128,7 +280,7 @@ export default function GroupDashboard() {
           {tab === 'Members' && (
             <div className="gd-tab-content">
               <div className="gd-panel">
-                <div className="gd-panel-title">All Members ({MEMBERS.length})</div>
+                <div className="gd-panel-title">All Members ({members.length})</div>
                 <table className="gd-table">
                   <thead>
                     <tr>
@@ -141,25 +293,36 @@ export default function GroupDashboard() {
                     </tr>
                   </thead>
                   <tbody>
-                    {MEMBERS.map((m, i) => (
-                      <tr key={i}>
-                        <td className="gd-member-name">
-                          <span className="gd-member-avatar">{m.name.split(' ').map(w => w[0]).join('')}</span>
-                          {m.name}
-                        </td>
-                        <td>{m.role}</td>
-                        <td>P{(m.contributions * 1000).toLocaleString()} ({m.contributions}/4 mo)</td>
-                        <td>P{m.interestRaised.toLocaleString()}</td>
-                        <td className={m.loanBalance > 0 ? 'gd-loan-val' : ''}>
-                          {m.loanBalance > 0 ? `P${m.loanBalance.toLocaleString()}` : '—'}
-                        </td>
-                        <td>
-                          <span className="gd-status-badge" style={STATUS_STYLE[m.status]}>
-                            {m.status}
-                          </span>
-                        </td>
+                    {members.length > 0 ? (
+                      members.map((m, i) => {
+                        const status = m.loanbalance > 0 ? 'Loan Active' : m.contributions < 3 ? 'Behind' : 'Good Standing';
+                        return (
+                          <tr key={m.memberid || i}>
+                            <td className="gd-member-name">
+                              <span className="gd-member-avatar">
+                                {(m.membername || 'M').split(' ').map(w => w[0]).join('').slice(0, 2)}
+                              </span>
+                              {m.membername || 'Unknown Member'}
+                            </td>
+                            <td>{m.role || 'Member'}</td>
+                            <td>P{((m.contributions || 0) * (group?.monthlycontribution || 1000)).toLocaleString()} ({m.contributions || 0}/4 mo)</td>
+                            <td>P{(m.interestraised || 0).toLocaleString()}</td>
+                            <td className={m.loanbalance > 0 ? 'gd-loan-val' : ''}>
+                              {m.loanbalance > 0 ? `P${(m.loanbalance || 0).toLocaleString()}` : '—'}
+                            </td>
+                            <td>
+                              <span className="gd-status-badge" style={STATUS_STYLE[status]}>
+                                {status}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    ) : (
+                      <tr>
+                        <td colSpan={6} className="gd-empty-cell">No members yet</td>
                       </tr>
-                    ))}
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -173,20 +336,24 @@ export default function GroupDashboard() {
                 As a signatory, you can approve or reject pending loan requests, contributions, and repayments. Both signatories must approve for items to reflect.
               </div>
               <div className="gd-panel">
-                <div className="gd-panel-title">Pending Approvals ({PENDING_APPROVALS.length})</div>
-                {PENDING_APPROVALS.map((a, i) => (
-                  <div key={i} className="gd-approval-row">
-                    <div className="gd-approval-info">
-                      <span className="gd-approval-type">{a.type}</span>
-                      <span className="gd-approval-member">{a.member} · P{a.amount.toLocaleString()} · {a.date}</span>
-                      <span className="gd-approval-approvals">{a.approvals}/2 approvals</span>
+                <div className="gd-panel-title">Pending Approvals ({pendingApprovals.length})</div>
+                {pendingApprovals.length > 0 ? (
+                  pendingApprovals.map((a, i) => (
+                    <div key={i} className="gd-approval-row">
+                      <div className="gd-approval-info">
+                        <span className="gd-approval-type">{a.type}</span>
+                        <span className="gd-approval-member">{a.member} · P{(a.amount || 0).toLocaleString()} · {a.date}</span>
+                        <span className="gd-approval-approvals">{a.approvals}/2 approvals</span>
+                      </div>
+                      <div className="gd-approval-actions">
+                        <button className="gd-btn-approve" onClick={() => handleApprove(a)}>Approve</button>
+                        <button className="gd-btn-reject" onClick={() => handleReject(a)}>Reject</button>
+                      </div>
                     </div>
-                    <div className="gd-approval-actions">
-                      <button className="gd-btn-approve">Approve</button>
-                      <button className="gd-btn-reject">Reject</button>
-                    </div>
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  <div className="gd-empty-state">No pending approvals</div>
+                )}
               </div>
             </div>
           )}
@@ -195,7 +362,7 @@ export default function GroupDashboard() {
           {tab === 'Reports' && (
             <div className="gd-tab-content">
               <div className="gd-panel">
-                <div className="gd-panel-title">Year-End Report Preview — {GROUP.year}</div>
+                <div className="gd-panel-title">Year-End Report Preview — 2026</div>
                 <table className="gd-table">
                   <thead>
                     <tr>
@@ -207,21 +374,27 @@ export default function GroupDashboard() {
                     </tr>
                   </thead>
                   <tbody>
-                    {MEMBERS.map((m, i) => {
-                      const contributed = m.contributions * 1000;
-                      const payout = contributed + m.interestRaised;
-                      return (
-                        <tr key={i}>
-                          <td>{m.name}</td>
-                          <td>P{contributed.toLocaleString()}</td>
-                          <td>P{m.interestRaised.toLocaleString()}</td>
-                          <td className={m.loanBalance > 0 ? 'gd-loan-val' : ''}>
-                            {m.loanBalance > 0 ? `P${m.loanBalance.toLocaleString()}` : '—'}
-                          </td>
-                          <td className="gd-payout-val">P{payout.toLocaleString()}</td>
-                        </tr>
-                      );
-                    })}
+                    {members.length > 0 ? (
+                      members.map((m, i) => {
+                        const contributed = (m.contributions || 0) * (group?.monthlycontribution || 1000);
+                        const payout = contributed + (m.interestraised || 0) - (m.loanbalance || 0);
+                        return (
+                          <tr key={m.memberid || i}>
+                            <td>{m.membername || 'Unknown Member'}</td>
+                            <td>P{contributed.toLocaleString()}</td>
+                            <td>P{(m.interestraised || 0).toLocaleString()}</td>
+                            <td className={m.loanbalance > 0 ? 'gd-loan-val' : ''}>
+                              {m.loanbalance > 0 ? `P${(m.loanbalance || 0).toLocaleString()}` : '—'}
+                            </td>
+                            <td className="gd-payout-val">P{payout.toLocaleString()}</td>
+                          </tr>
+                        );
+                      })
+                    ) : (
+                      <tr>
+                        <td colSpan={5} className="gd-empty-cell">No members yet</td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
                 <div className="gd-report-note">

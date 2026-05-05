@@ -1,42 +1,82 @@
-const jwt = require("jsonwebtoken");
+const { db } = require("../config/db");
 
-const protect = (req, res, next) => {
-  const bearer = req.headers.authorization;
-
-  if (!bearer || !bearer.startsWith("Bearer ")) {
-    return res.status(401).json({ error: "No token provided" });
-  }
-
-  const token = bearer.split(" ")[1];
-
-  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
-    if (err) return res.status(403).json({ error: "Invalid or expired token" });
-    req.user = decoded;
-    next();
-  });
-};
-
-const requireSignatory = async (req, res, next) => {
-  const { db } = require("../config/db");
-  const groupId = req.params.groupId || req.body.groupId;
-
+// Get year-end report for a group
+exports.getYearEndReport = async (req, res) => {
+  const { groupId } = req.params;
+  
   try {
     const result = await db.query(
-      `SELECT gm.memberid FROM groupmembers gm
-       WHERE gm.userid = $1 AND gm.groupid = $2
-         AND gm.role IN ('signatory', 'admin') AND gm.isactive = true`,
-      [req.user.id, groupId]
+      "SELECT * FROM vw_year_end_report WHERE groupid = $1",
+      [groupId]
     );
-
-    if (result.rows.length === 0) {
-      return res.status(403).json({ error: "Signatory access required" });
-    }
-
-    req.memberID = result.rows[0].memberid;
-    next();
+    res.json({ success: true, data: result.rows });
   } catch (err) {
+    console.error("Error fetching year-end report:", err);
     res.status(500).json({ error: err.message });
   }
 };
 
-module.exports = { protect, requireSignatory };
+// Get group summary statistics
+exports.getGroupSummary = async (req, res) => {
+  const { groupId } = req.params;
+  
+  try {
+    const group = await db.query(
+      "SELECT * FROM motshelogroups WHERE groupid = $1",
+      [groupId]
+    );
+    
+    if (group.rows.length === 0) {
+      return res.status(404).json({ error: "Group not found" });
+    }
+    
+    const memberCount = await db.query(
+      "SELECT COUNT(*) as count FROM groupmembers WHERE groupid = $1 AND isactive = true",
+      [groupId]
+    );
+    
+    const totalContributions = await db.query(
+      "SELECT SUM(amountpaid) as total FROM monthlycontributions WHERE groupid = $1 AND status = 'paid'",
+      [groupId]
+    );
+    
+    const totalLoans = await db.query(
+      "SELECT SUM(outstandingbalance) as total FROM loans WHERE groupid = $1 AND status = 'active'",
+      [groupId]
+    );
+    
+    res.json({
+      success: true,
+      data: {
+        group: group.rows[0],
+        memberCount: memberCount.rows[0].count,
+        totalContributions: totalContributions.rows[0].total || 0,
+        totalLoans: totalLoans.rows[0].total || 0
+      }
+    });
+  } catch (err) {
+    console.error("Error fetching group summary:", err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Get member statement
+exports.getMemberStatement = async (req, res) => {
+  const { groupId, memberId } = req.params;
+  
+  try {
+    const result = await db.query(
+      "SELECT * FROM vw_member_balances WHERE groupid = $1 AND memberid = $2",
+      [groupId, memberId]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Member not found" });
+    }
+    
+    res.json({ success: true, data: result.rows[0] });
+  } catch (err) {
+    console.error("Error fetching member statement:", err);
+    res.status(500).json({ error: err.message });
+  }
+};

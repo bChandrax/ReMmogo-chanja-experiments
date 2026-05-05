@@ -3,8 +3,7 @@
   border: 0.5px solid #e0ddd5;
   border-radius: 12px;
   overflow: hidden;
-  width: 260px;
-  flex-shrink: 0;
+  width: 100%;
   cursor: pointer;
   transition: box-shadow 0.2s ease, transform 0.2s ease;
 }

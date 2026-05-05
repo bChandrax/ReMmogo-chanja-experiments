@@ -1,18 +1,25 @@
 const { Pool } = require("pg");
 require("dotenv").config();
 
+// Determine if we're running in production (e.g., on Render)
+const isProduction = process.env.NODE_ENV === "production" && process.env.DATABASE_URL?.includes('render.com');
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
+  // Only use SSL for production databases (Render, etc.)
+  ssl: isProduction ? { rejectUnauthorized: false } : false,
 });
 
 const connectDB = async () => {
   try {
     await pool.query("SELECT 1");
-    console.log("Connected to PostgreSQL");
+    console.log("✅ Connected to PostgreSQL successfully");
   } catch (err) {
-    console.error("DB connection failed:", err.message);
-    process.exit(1);
+    console.error("❌ DB connection failed:", err.message);
+    // Don't exit process in development - allow retries
+    if (isProduction) {
+      process.exit(1);
+    }
   }
 };
 

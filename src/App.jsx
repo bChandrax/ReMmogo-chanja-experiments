@@ -1,4 +1,6 @@
-import { Routes, Route, BrowserRouter } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
+import { AuthProvider } from "./context/AuthContext";
+import ProtectedRoute from "./components/ProtectedRoute";
 import LandingPage from "./pages/landing-page/LandingPage";
 import PersonalDashboard from "./pages/personal-dashboard/PersonalDashboard";
 import LoginPage from "./pages/login/LoginPage";
@@ -16,25 +18,45 @@ import './App.css';
 
 function App() {
   return (
-  <BrowserRouter>
-    <PageTransition>
-    <Routes>
-      <Route path="/" element={<LandingPage />} />
-      <Route path="/pdash" element={<PersonalDashboard />} />
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/myGroups" element={<MyGroups />} />
-      <Route path="/explore" element={<ExplorePage />} />
-      <Route path="/myContributions" element={<MyContributions />} />
-      <Route path="/myLoans" element={<MyLoans />} />
-      <Route path="/createGroup" element={<CreateGroup />} />
-      <Route path="/GrpDash" element={<GroupDashboard />} />
-      <Route path="/messages" element={<MessagesPage />} />
-      <Route path="/settings" element={<SettingsPage />} />
-      <Route path="/support" element={<SupportPage />} />
-    </Routes>
-    </PageTransition>
-  </BrowserRouter>
-  )
+    <AuthProvider>
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/login" element={<LoginPage />} />
+        
+        {/* Protected Routes */}
+        <Route path="/pdash" element={
+          <ProtectedRoute><PersonalDashboard /></ProtectedRoute>
+        } />
+        <Route path="/myGroups" element={
+          <ProtectedRoute><MyGroups /></ProtectedRoute>
+        } />
+        <Route path="/explore" element={
+          <ProtectedRoute><ExplorePage /></ProtectedRoute>
+        } />
+        <Route path="/myContributions" element={
+          <ProtectedRoute><MyContributions /></ProtectedRoute>
+        } />
+        <Route path="/myLoans" element={
+          <ProtectedRoute><MyLoans /></ProtectedRoute>
+        } />
+        <Route path="/createGroup" element={
+          <ProtectedRoute><CreateGroup /></ProtectedRoute>
+        } />
+        <Route path="/GrpDash" element={
+          <ProtectedRoute><GroupDashboard /></ProtectedRoute>
+        } />
+        <Route path="/messages" element={
+          <ProtectedRoute><MessagesPage /></ProtectedRoute>
+        } />
+        <Route path="/settings" element={
+          <ProtectedRoute><SettingsPage /></ProtectedRoute>
+        } />
+        <Route path="/support" element={
+          <ProtectedRoute><SupportPage /></ProtectedRoute>
+        } />
+      </Routes>
+    </AuthProvider>
+  );
 }
 
 export default App;

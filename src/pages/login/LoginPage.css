@@ -403,9 +403,44 @@ body { background: #F9F7F2; font-family: 'Inter', sans-serif; }
   padding: 4px 8px;
   border-radius: 6px;
 }
-.login-toggle-text button:hover { 
+.login-toggle-text button:hover {
   color: #40916C;
   background: rgba(45,106,79,0.06);
+}
+
+/* ── Error Message ── */
+.login-error-message {
+  background: linear-gradient(135deg, #FEF2F2, #FEE2E2);
+  border: 1.5px solid #FECACA;
+  color: #DC2626;
+  padding: 14px 18px;
+  border-radius: 12px;
+  font: 600 13px/1.5 'Inter', sans-serif;
+  margin-bottom: 18px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.login-error-message::before {
+  content: '⚠';
+  font-size: 16px;
+}
+
+/* Success message styling (for future use) */
+.login-success-message {
+  background: linear-gradient(135deg, #F0FDF4, #DCFCE7);
+  border: 1.5px solid #BBF7D0;
+  color: #16A34A;
+  padding: 14px 18px;
+  border-radius: 12px;
+  font: 600 13px/1.5 'Inter', sans-serif;
+  margin-bottom: 18px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(22, 163, 74, 0.1);
 }
 
 /* ═══════════════════════════════════
