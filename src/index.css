@@ -1,10 +1,22 @@
 /* ── Google Fonts ── */
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap');
 
-/* ── Global Reset ── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* ── Animations & Transitions ── */
+@import './styles/animations.css';
 
-html { scroll-behavior: smooth; }
+/* ── Responsive Utilities ── */
+@import './styles/responsive.css';
+
+/* ── Global Reset ── */
+*, *::before, *::after { 
+  box-sizing: border-box; 
+  margin: 0; 
+  padding: 0; 
+}
+
+html { 
+  scroll-behavior: smooth; 
+}
 
 html, body, #root {
   width: 100%;
@@ -17,9 +29,121 @@ body {
   color: #1A1A1A;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
 }
 
-#root { display: flex; flex-direction: column; }
+#root { 
+  display: flex; 
+  flex-direction: column; 
+  min-height: 100vh;
+}
 
-a { text-decoration: none; color: inherit; }
-button { font-family: inherit; cursor: pointer; }
+a { 
+  text-decoration: none; 
+  color: inherit; 
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: #2c3e1f;
+}
+
+button { 
+  font-family: inherit; 
+  cursor: pointer; 
+  transition: all 0.2s ease;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* ── Scrollbar Styling ───────────────────────────────────── */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f5f5f0;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c5c5b0;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a5a590;
+}
+
+/* ── Selection ───────────────────────────────────── */
+
+::selection {
+  background: #2c3e1f;
+  color: #fff;
+}
+
+/* ── Focus States ───────────────────────────────────── */
+
+:focus-visible {
+  outline: 2px solid #2c3e1f;
+  outline-offset: 2px;
+}
+
+/* ── Responsive Typography ───────────────────────────────────── */
+
+html {
+  font-size: 16px;
+}
+
+@media (max-width: 768px) {
+  html {
+    font-size: 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  html {
+    font-size: 14px;
+  }
+}
+
+/* ── Utility Classes ───────────────────────────────────── */
+
+.container {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 0 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 0 12px;
+  }
+}
+
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.items-center { align-items: center; }
+.justify-center { justify-content: center; }
+.justify-between { justify-content: space-between; }
+.gap-4 { gap: 16px; }
+.gap-2 { gap: 8px; }
+
+.hidden { display: none; }
+.block { display: block; }
