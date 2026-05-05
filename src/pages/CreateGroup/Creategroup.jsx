@@ -33,16 +33,6 @@ export default function CreateGroup() {
       setCreating(true);
       setError(null);
 
-      // Validate required fields
-      if (!form.name) {
-        setError('Group name is required');
-        return;
-      }
-      if (!form.signatory1 || !form.signatory2) {
-        setError('Both signatories are required');
-        return;
-      }
-
       // Prepare data for backend
       // Build safe start/end dates — appending '-01' ensures a valid date string
       // when the browser gives us "YYYY-MM" from <input type="month">
@@ -294,7 +284,7 @@ export default function CreateGroup() {
                 <button 
                   className="cg-btn-submit" 
                   onClick={handleSubmit}
-                  disabled={creating || !form.name || !form.signatory1 || !form.signatory2}
+                  disabled={creating}
                 >
                   {creating ? 'Creating...' : 'Create Group'}
                 </button>
