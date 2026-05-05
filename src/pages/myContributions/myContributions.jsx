@@ -32,11 +32,11 @@ export default function MyContributions() {
       setLoading(true);
       setError(null);
 
-      // Fetch user's groups
-      const groupsRes = await groupsAPI.getAll();
+      // Fetch user's groups (only groups they are a member of)
+      const groupsRes = await groupsAPI.getMine();
       if (groupsRes.success && groupsRes.data) {
         setGroups(groupsRes.data);
-        
+
         // Fetch contributions for the first group
         if (groupsRes.data.length > 0) {
           const contribRes = await contributionsAPI.getAll(groupsRes.data[0].groupid);

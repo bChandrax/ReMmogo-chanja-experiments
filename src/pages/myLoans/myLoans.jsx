@@ -30,20 +30,25 @@ export default function MyLoans() {
       setLoading(true);
       setError(null);
 
-      // Fetch user's groups
-      const groupsRes = await groupsAPI.getAll();
+      // Fetch user's groups (only groups they are a member of)
+      const groupsRes = await groupsAPI.getMine();
       if (groupsRes.success && groupsRes.data) {
         setGroups(groupsRes.data);
-      }
 
-      // Fetch all loans
-      const loansRes = await loansAPI.getAll();
-      if (loansRes.success && loansRes.data) {
-        setLoans(loansRes.data);
+        // Fetch loans for all user's groups
+        const loansPromises = groupsRes.data.map(g => loansAPI.getAll(g.groupid));
+        const loansResults = await Promise.all(loansPromises);
         
+        // Combine all loans from all groups
+        const allLoans = loansResults
+          .filter(res => res.success && res.data)
+          .flatMap(res => res.data);
+        
+        setLoans(allLoans);
+
         // Select first active loan by default, or first loan
-        const activeIndex = loansRes.data.findIndex(l => l.status === 'active');
-        setSelectedLoanIndex(activeIndex >= 0 ? activeIndex : (loansRes.data.length > 0 ? 0 : null));
+        const activeIndex = allLoans.findIndex(l => l.status === 'disbursed');
+        setSelectedLoanIndex(activeIndex >= 0 ? activeIndex : (allLoans.length > 0 ? 0 : null));
       }
     } catch (err) {
       console.error('Error fetching data:', err);
