@@ -1,5 +1,6 @@
 import { Search, Bell } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
+import "./DashboardNavBar.css";
 
 export default function DashboardNavBar() {
   const { user } = useAuth();
@@ -10,8 +11,19 @@ export default function DashboardNavBar() {
         <h1>Welcome back, {user?.firstName || "User"}</h1>
         <p>Here's a real-time snapshot of your financial health across accounts and obligations</p>
       </div>
-      <input type="text" className="search-box" placeholder="🔍 Search" />
-      <button className="btn"><Bell size={18} /> Notifications</button>
+      
+      <div className="topbar-right">
+        <div className="search-box">
+          <Search size={18} style={{ color: '#9ca3af' }} />
+          <input type="text" placeholder="Search..." />
+        </div>
+        
+        <button className="btn">
+          <Bell size={18} />
+          <span>Notifications</span>
+          <span className="notification-badge"></span>
+        </button>
+      </div>
     </div>
   );
 }
