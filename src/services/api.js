@@ -87,6 +87,7 @@ export const groupsAPI = {
 // Members API
 export const membersAPI = {
   getAll: (groupId) => apiRequest(`/members/${groupId}`),
+  getSignatories: (groupId) => apiRequest(`/members/${groupId}/signatories`),
   getOne: (id) => apiRequest(`/members/${id}`),
   create: (groupId, data) => apiRequest(`/members/${groupId}/enroll`, { method: 'POST', body: JSON.stringify(data) }),
   update: (id, member) => apiRequest(`/members/${id}`, { method: 'PUT', body: JSON.stringify(member) }),

@@ -55,17 +55,56 @@ exports.enrollMember = async (req, res) => {
   }
 };
 
-// GET ALL MEMBERS OF A GROUP
+// GET ALL MEMBERS OF A GROUP WITH BALANCE DATA
 exports.getGroupMembers = async (req, res) => {
   const { groupId } = req.params;
   try {
     const result = await db.query(
-      `SELECT gm.memberid, gm.role, gm.joindate, gm.isactive,
-              u.userid, u.firstname, u.lastname, u.email, u.phonenumber
+      `SELECT 
+        gm.memberid, 
+        gm.role, 
+        gm.joindate, 
+        gm.isactive,
+        u.userid, 
+        u.firstname, 
+        u.lastname, 
+        u.email, 
+        u.phonenumber,
+        COALESCE(mb.totalpaid, 0) AS totalpaid,
+        COALESCE(mb.totalcontributions, 0) AS totalcontributions,
+        COALESCE(mb.paidcontributions, 0) AS paidcontributions,
+        COALESCE(mb.outstandingloans, 0) AS loanbalance,
+        COALESCE(mb.totalloanstaken, 0) AS totalloanstaken
        FROM groupmembers gm
        INNER JOIN users u ON u.userid = gm.userid
+       LEFT JOIN vw_member_balances mb ON mb.memberid = gm.memberid AND mb.groupid = gm.groupid
        WHERE gm.groupid = $1 AND gm.isactive = true
-       ORDER BY gm.role, u.firstname`,
+       ORDER BY gm.role DESC, u.firstname`,
+      [groupId]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// GET GROUP SIGNATORIES
+exports.getGroupSignatories = async (req, res) => {
+  const { groupId } = req.params;
+  try {
+    const result = await db.query(
+      `SELECT 
+        gs.signatoryid,
+        gm.memberid,
+        u.firstname,
+        u.lastname,
+        u.email,
+        gm.role
+       FROM groupsignatories gs
+       INNER JOIN groupmembers gm ON gm.memberid = gs.memberid
+       INNER JOIN users u ON u.userid = gm.userid
+       WHERE gs.groupid = $1 AND gs.isactive = true AND gm.isactive = true
+       ORDER BY gs.assignedat`,
       [groupId]
     );
     res.json(result.rows);

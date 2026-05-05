@@ -23,6 +23,7 @@ export default function GroupDashboard() {
   
   const [group, setGroup] = useState(null);
   const [members, setMembers] = useState([]);
+  const [signatories, setSignatories] = useState([]);
   const [contributions, setContributions] = useState([]);
   const [loans, setLoans] = useState([]);
   const [pendingApprovals, setPendingApprovals] = useState([]);
@@ -47,10 +48,16 @@ export default function GroupDashboard() {
         return;
       }
 
-      // Fetch members
+      // Fetch members with balance data
       const membersRes = await membersAPI.getAll(groupId);
       if (membersRes.success && membersRes.data) {
         setMembers(membersRes.data);
+      }
+
+      // Fetch signatories
+      const signatoriesRes = await membersAPI.getSignatories(groupId);
+      if (signatoriesRes.success && signatoriesRes.data) {
+        setSignatories(signatoriesRes.data);
       }
 
       // Fetch contributions
@@ -67,16 +74,16 @@ export default function GroupDashboard() {
 
       // Build pending approvals from contributions and loans
       const approvals = [];
-      
+
       // Add pending loan approvals
       loansRes.data?.forEach(loan => {
-        if (loan.status === 'pending') {
+        if (loan.status === 'pending_approval' || loan.status === 'approved') {
           approvals.push({
             type: 'Loan Request',
             memberId: loan.borrowermemberid,
             member: loan.borrowername || 'Unknown Member',
             amount: loan.principalamount,
-            date: loan.createdat ? new Date(loan.createdat).toLocaleDateString('en-GB', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Unknown',
+            date: loan.requestedat ? new Date(loan.requestedat).toLocaleDateString('en-GB', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Unknown',
             approvals: 0,
             loanId: loan.loanid,
           });
@@ -85,7 +92,7 @@ export default function GroupDashboard() {
 
       // Add pending contribution approvals
       contribRes.data?.forEach(contrib => {
-        if (contrib.status === 'pending') {
+        if (contrib.status === 'submitted') {
           approvals.push({
             type: 'Contribution',
             memberId: contrib.memberid,
@@ -160,9 +167,12 @@ export default function GroupDashboard() {
   };
 
   // Calculate statistics
-  const totalContributions = members.reduce((sum, m) => sum + (m.contributions || 0) * (group?.monthlycontribution || 1000), 0);
-  const totalInterest = members.reduce((sum, m) => sum + (m.interestraised || 0), 0);
+  const totalContributions = members.reduce((sum, m) => sum + (m.totalpaid || 0), 0);
+  const totalInterest = members.reduce((sum, m) => sum + ((m.paidcontributions || 0) * 0.15), 0); // 15% interest on contributions
   const totalLoans = members.reduce((sum, m) => sum + (m.loanbalance || 0), 0);
+
+  // Format signatories names
+  const signatoriesList = signatories.map(s => `${s.firstname} ${s.lastname}`).join(' · ');
 
   if (loading) {
     return (
@@ -212,7 +222,11 @@ export default function GroupDashboard() {
               <h2 className="gd-group-name">{group.groupname}</h2>
               <p className="gd-group-desc">{group.description || 'A motshelo savings group'}</p>
               <div className="gd-signatories">
-                Signatories: Kabo Moeng · Selepe Tau {/* Would need to fetch from backend */}
+                {signatories.length > 0 ? (
+                  <>Signatories: {signatoriesList}</>
+                ) : (
+                  <>Signatories: None assigned</>
+                )}
               </div>
             </div>
             <div className="gd-header-badge">
@@ -295,23 +309,37 @@ export default function GroupDashboard() {
                   <tbody>
                     {members.length > 0 ? (
                       members.map((m, i) => {
-                        const status = m.loanbalance > 0 ? 'Loan Active' : m.contributions < 3 ? 'Behind' : 'Good Standing';
+                        const contributionCount = m.totalcontributions || 0;
+                        const contributionAmount = m.totalpaid || 0;
+                        const interestRaised = (m.paidcontributions || 0) * 0.15; // 15% interest
+                        const loanBalance = m.loanbalance || 0;
+                        
+                        // Determine status based on actual data
+                        let status = 'Good Standing';
+                        if (loanBalance > 0) {
+                          status = 'Loan Active';
+                        } else if (contributionCount < 3) {
+                          status = 'Behind';
+                        }
+                        
+                        const statusStyle = STATUS_STYLE[status];
+                        
                         return (
                           <tr key={m.memberid || i}>
                             <td className="gd-member-name">
                               <span className="gd-member-avatar">
-                                {(m.membername || 'M').split(' ').map(w => w[0]).join('').slice(0, 2)}
+                                {(m.firstname || m.membername || 'M').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
                               </span>
-                              {m.membername || 'Unknown Member'}
+                              {m.firstname ? `${m.firstname} ${m.lastname}` : (m.membername || 'Unknown Member')}
                             </td>
                             <td>{m.role || 'Member'}</td>
-                            <td>P{((m.contributions || 0) * (group?.monthlycontribution || 1000)).toLocaleString()} ({m.contributions || 0}/4 mo)</td>
-                            <td>P{(m.interestraised || 0).toLocaleString()}</td>
-                            <td className={m.loanbalance > 0 ? 'gd-loan-val' : ''}>
-                              {m.loanbalance > 0 ? `P${(m.loanbalance || 0).toLocaleString()}` : '—'}
+                            <td>P{contributionAmount.toLocaleString()} ({contributionCount} mo)</td>
+                            <td>P{interestRaised.toLocaleString()}</td>
+                            <td className={loanBalance > 0 ? 'gd-loan-val' : ''}>
+                              {loanBalance > 0 ? `P${loanBalance.toLocaleString()}` : '—'}
                             </td>
                             <td>
-                              <span className="gd-status-badge" style={STATUS_STYLE[status]}>
+                              <span className="gd-status-badge" style={statusStyle}>
                                 {status}
                               </span>
                             </td>
@@ -376,15 +404,19 @@ export default function GroupDashboard() {
                   <tbody>
                     {members.length > 0 ? (
                       members.map((m, i) => {
-                        const contributed = (m.contributions || 0) * (group?.monthlycontribution || 1000);
-                        const payout = contributed + (m.interestraised || 0) - (m.loanbalance || 0);
+                        const contributed = m.totalpaid || 0;
+                        const interestRaised = (m.paidcontributions || 0) * 0.15;
+                        const loansTaken = m.totalloanstaken || 0;
+                        const loanBalance = m.loanbalance || 0;
+                        const payout = contributed + interestRaised - loanBalance;
+                        
                         return (
                           <tr key={m.memberid || i}>
-                            <td>{m.membername || 'Unknown Member'}</td>
+                            <td>{m.firstname ? `${m.firstname} ${m.lastname}` : (m.membername || 'Unknown Member')}</td>
                             <td>P{contributed.toLocaleString()}</td>
-                            <td>P{(m.interestraised || 0).toLocaleString()}</td>
-                            <td className={m.loanbalance > 0 ? 'gd-loan-val' : ''}>
-                              {m.loanbalance > 0 ? `P${(m.loanbalance || 0).toLocaleString()}` : '—'}
+                            <td>P{interestRaised.toLocaleString()}</td>
+                            <td className={loansTaken > 0 ? 'gd-loan-val' : ''}>
+                              {loansTaken > 0 ? `P${loansTaken.toLocaleString()}` : '—'}
                             </td>
                             <td className="gd-payout-val">P{payout.toLocaleString()}</td>
                           </tr>
