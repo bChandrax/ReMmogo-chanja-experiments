@@ -4,10 +4,6 @@ const { db } = require("../config/db");
 exports.createGroup = async (req, res) => {
   const { groupName, description, yearStartDate, yearEndDate, monthlyContribution, requiredInterest, loanInterestRate } = req.body;
 
-  if (!groupName || !yearStartDate || !yearEndDate) {
-    return res.status(400).json({ error: "Group name, start date and end date are required" });
-  }
-
   try {
     const result = await db.query(
       `INSERT INTO motshelogroups (groupname, description, monthlycontribution, requiredinterest, loaninterestrate, yearstartdate, yearenddate)
