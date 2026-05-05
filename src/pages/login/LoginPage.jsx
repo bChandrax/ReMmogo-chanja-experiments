@@ -7,7 +7,7 @@ import "./LoginPage.css"
 export default function LoginPage() {
   const navigate = useNavigate()
   const { login, register } = useAuth()
-  
+
   const [showSignUp, setShowSignUp] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
@@ -27,7 +27,7 @@ export default function LoginPage() {
 
     try {
       const result = await login(signInEmail, signInPassword)
-      
+
       if (!result.success) {
         // Handle specific error types
         if (result.status === 0) {
@@ -43,7 +43,7 @@ export default function LoginPage() {
         }
         return
       }
-      
+
       navigate("/pdash")
     } catch (err) {
       console.error("Login error:", err)
@@ -66,7 +66,7 @@ export default function LoginPage() {
         email: signUpEmail,
         password: signUpPassword,
       })
-      
+
       if (!result.success) {
         // Handle specific error types
         if (result.status === 0) {
@@ -86,7 +86,7 @@ export default function LoginPage() {
         }
         return
       }
-      
+
       navigate("/pdash")
     } catch (err) {
       console.error("Registration error:", err)
@@ -118,34 +118,29 @@ export default function LoginPage() {
             <div className="login-phone-screen">
               <div className="login-phone-topbar">
                 <span className="login-phone-topbar-line" />
-                <span className="login-phone-topbar-menu" />
+                <span className="login-phone-topbar-dot" />
               </div>
+
+              {/* fingerprint scanner */}
               <div className="login-fingerprint">
-                <span className="login-fingerprint-ring login-fingerprint-ring--outer" />
-                <span className="login-fingerprint-ring login-fingerprint-ring--middle" />
-                <span className="login-fingerprint-ring login-fingerprint-ring--inner" />
-                <span className="login-fingerprint-dot" />
+                <div className="login-fingerprint-scan-line" />
+                <svg viewBox="0 0 100 140" className="login-fingerprint-svg">
+                  <path d="M50,20 Q70,20 70,40 L70,50" stroke="rgba(255,255,255,0.3)" strokeWidth="3" fill="none" />
+                  <path d="M50,25 Q65,25 65,40 L65,50" stroke="rgba(255,255,255,0.3)" strokeWidth="3" fill="none" />
+                  <path d="M50,15 Q30,15 30,40 L30,50" stroke="rgba(255,255,255,0.3)" strokeWidth="3" fill="none" />
+                  <path d="M50,18 Q35,18 35,40 L35,50" stroke="rgba(255,255,255,0.3)" strokeWidth="3" fill="none" />
+                  <circle cx="50" cy="70" r="20" stroke="rgba(255,255,255,0.3)" strokeWidth="3" fill="none" />
+                  <circle cx="50" cy="70" r="14" stroke="rgba(255,255,255,0.3)" strokeWidth="3" fill="none" />
+                  <circle cx="50" cy="70" r="8" stroke="rgba(255,255,255,0.3)" strokeWidth="3" fill="none" />
+                </svg>
               </div>
-              <div className="login-phone-progress-bar">
-                <div className="login-phone-progress-bar-fill" />
+
+              {/* progress bar */}
+              <div className="login-progress">
+                <div className="login-progress-bar" />
+                <span className="login-progress-text">Please tap your finger</span>
               </div>
-              <span className="login-phone-label">Please tap your finger</span>
             </div>
-          </div>
-
-          {/* person illustration */}
-          <div className="login-person">
-            <div className="login-person-head" />
-            <div className="login-person-body" />
-            <div className="login-person-arm" />
-            <div className="login-person-leg login-person-leg--left" />
-            <div className="login-person-leg login-person-leg--right" />
-            <div className="login-person-bag" />
-          </div>
-
-          {/* checkmark badge */}
-          <div className="login-check-badge">
-            <Check size={24} />
           </div>
 
           {/* padlock icon */}
@@ -176,11 +171,6 @@ export default function LoginPage() {
               <p className="login-subtitle">Hey, welcome back to your special place</p>
 
               {error && <div className="login-error-message">{error}</div>}
-
-              {/* Demo credentials hint */}
-              <div className="login-demo-hint">
-                <span>📝 Demo: kagiso@remmogo.bw / Password123</span>
-              </div>
 
               <form onSubmit={handleSignIn}>
                 <div className="login-field">

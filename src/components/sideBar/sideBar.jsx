@@ -25,16 +25,16 @@ export default function SideBar() {
       </div>
 
       <nav className="navigation">
-        <Link to="/pdash"            className={`nav-item ${location.pathname === "/pdash"         ? "nav-item-active" : ""}`}><Home size={18} />Dashboard</Link>
-        <Link to="/myGroups"         className={`nav-item ${location.pathname === "/myGroups"         ? "nav-item-active" : ""}`}><GroupIcon size={18} />My Groups</Link>
-        <Link to="/myContributions"  className={`nav-item ${location.pathname === "/myContributions"  ? "nav-item-active" : ""}`}><Coins size={18} />My Contributions</Link>
-        <Link to="/myLoans"          className={`nav-item ${location.pathname === "/myLoans"          ? "nav-item-active" : ""}`}><Banknote size={18} />My Loans</Link>
+        <Link to="/pdash"            className={`nav-item ${location.pathname === "/dashboard"         ? "nav-item-active" : ""}`}><Home size={18} />Dashboard</Link>
+        <Link to="/myGroups"         className={`nav-item ${location.pathname === "/my-groups"         ? "nav-item-active" : ""}`}><GroupIcon size={18} />My Groups</Link>
+        <Link to="/myContributions"  className={`nav-item ${location.pathname === "/my-contributions"  ? "nav-item-active" : ""}`}><Coins size={18} />My Contributions</Link>
+        <Link to="/myLoans"          className={`nav-item ${location.pathname === "/my-loans"          ? "nav-item-active" : ""}`}><Banknote size={18} />My Loans</Link>
         <Link to="/messages"    className={`nav-item ${location.pathname === "/messages"     ? "nav-item-active" : ""}`}><MessageCircle size={18} />Messages</Link>
 
         <div className="nav-divider" />
 
-        <Link to="/support"  className={`nav-item ${location.pathname === "/support"     ? "nav-item-active" : ""}`}><Info size={18} /> More Info</Link>
-        <Link to="/settings" className={`nav-item ${location.pathname === "/settings"     ? "nav-item-active" : ""}`}><Settings size={18} /> Settings</Link>
+        <Link to="/support"  className="nav-item"><Info size={18} /> More Info</Link>
+        <Link to="/settings" className="nav-item"><Settings size={18} /> Settings</Link>
       </nav>
 
       <div className="sidebar-bottom">

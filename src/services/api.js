@@ -25,7 +25,6 @@ async function apiRequest(endpoint, options = {}) {
     // Handle 401 unauthorized - token expired
     if (response.status === 401) {
       localStorage.removeItem('token');
-      // Don't redirect if already on login page
       if (!window.location.pathname.includes('/login')) {
         window.location.href = '/login';
       }
@@ -46,33 +45,23 @@ async function apiRequest(endpoint, options = {}) {
     const data = await response.json();
 
     if (!response.ok) {
-      // Return error object with status for better handling
-      return { 
-        success: false, 
-        error: data.error || 'Request failed', 
-        status: response.status,
-        details: data 
-      };
+      return { success: false, error: data.error || 'Request failed', status: response.status, details: data };
     }
 
-    // Wrap response in success object for consistency
     return { success: true, data, status: response.status };
   } catch (error) {
-    // Network error - API might be down
     if (error.name === 'TypeError' && error.message.includes('fetch')) {
       const errorMsg = 'Unable to connect to server. Please ensure the backend is running.';
       console.error('❌ ' + errorMsg);
       return { success: false, error: errorMsg, status: 0 };
     }
     
-    // CORS error detection
     if (error.message.includes('CORS') || error.message.includes('preflight')) {
       const errorMsg = 'Connection blocked by CORS policy. Check backend configuration.';
       console.error('❌ ' + errorMsg);
       return { success: false, error: errorMsg, status: 0 };
     }
     
-    // Return the error message
     console.error('❌ API Error:', error.message);
     return { success: false, error: error.message, status: 0 };
   }
@@ -80,18 +69,8 @@ async function apiRequest(endpoint, options = {}) {
 
 // Auth API
 export const authAPI = {
-  register: (data) =>
-    apiRequest('/auth/register', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
-
-  login: (email, password) =>
-    apiRequest('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-    }),
-
+  register: (data) => apiRequest('/auth/register', { method: 'POST', body: JSON.stringify(data) }),
+  login: (email, password) => apiRequest('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }),
   getProfile: () => apiRequest('/auth/profile'),
 };
 
@@ -99,40 +78,18 @@ export const authAPI = {
 export const groupsAPI = {
   getAll: () => apiRequest('/groups'),
   getOne: (id) => apiRequest(`/groups/${id}`),
-  create: (group) =>
-    apiRequest('/groups', {
-      method: 'POST',
-      body: JSON.stringify(group),
-    }),
-  update: (id, group) =>
-    apiRequest(`/groups/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(group),
-    }),
-  delete: (id) =>
-    apiRequest(`/groups/${id}`, {
-      method: 'DELETE',
-    }),
+  create: (group) => apiRequest('/groups', { method: 'POST', body: JSON.stringify(group) }),
+  update: (id, group) => apiRequest(`/groups/${id}`, { method: 'PUT', body: JSON.stringify(group) }),
+  delete: (id) => apiRequest(`/groups/${id}`, { method: 'DELETE' }),
 };
 
 // Members API
 export const membersAPI = {
   getAll: (groupId) => apiRequest(`/members/${groupId}`),
   getOne: (id) => apiRequest(`/members/${id}`),
-  create: (groupId, data) =>
-    apiRequest(`/members/${groupId}/enroll`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
-  update: (id, member) =>
-    apiRequest(`/members/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(member),
-    }),
-  delete: (groupId, memberId) =>
-    apiRequest(`/members/${groupId}/${memberId}`, {
-      method: 'DELETE',
-    }),
+  create: (groupId, data) => apiRequest(`/members/${groupId}/enroll`, { method: 'POST', body: JSON.stringify(data) }),
+  update: (id, member) => apiRequest(`/members/${id}`, { method: 'PUT', body: JSON.stringify(member) }),
+  delete: (groupId, memberId) => apiRequest(`/members/${groupId}/${memberId}`, { method: 'DELETE' }),
 };
 
 // Contributions API
@@ -151,20 +108,9 @@ export const contributionsAPI = {
     }
     return apiRequest(`/contributions/${groupId}/mine`);
   },
-  create: (contribution) =>
-    apiRequest('/contributions', {
-      method: 'POST',
-      body: JSON.stringify(contribution),
-    }),
-  update: (id, contribution) =>
-    apiRequest(`/contributions/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(contribution),
-    }),
-  delete: (id) =>
-    apiRequest(`/contributions/${id}`, {
-      method: 'DELETE',
-    }),
+  create: (contribution) => apiRequest('/contributions', { method: 'POST', body: JSON.stringify(contribution) }),
+  update: (id, contribution) => apiRequest(`/contributions/${id}`, { method: 'PUT', body: JSON.stringify(contribution) }),
+  delete: (id) => apiRequest(`/contributions/${id}`, { method: 'DELETE' }),
 };
 
 // Loans API
@@ -184,20 +130,9 @@ export const loansAPI = {
     return apiRequest(`/loans/${groupId}/mine`);
   },
   getOne: (id) => apiRequest(`/loans/${id}`),
-  create: (loan) =>
-    apiRequest('/loans', {
-      method: 'POST',
-      body: JSON.stringify(loan),
-    }),
-  update: (id, loan) =>
-    apiRequest(`/loans/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(loan),
-    }),
-  delete: (id) =>
-    apiRequest(`/loans/${id}`, {
-      method: 'DELETE',
-    }),
+  create: (loan) => apiRequest('/loans', { method: 'POST', body: JSON.stringify(loan) }),
+  update: (id, loan) => apiRequest(`/loans/${id}`, { method: 'PUT', body: JSON.stringify(loan) }),
+  delete: (id) => apiRequest(`/loans/${id}`, { method: 'DELETE' }),
 };
 
 // Reports API
@@ -215,41 +150,21 @@ export const messagesAPI = {
       method: 'POST',
       body: JSON.stringify({ conversationId, content, messagetype }),
     }),
-  markAsRead: (conversationId) =>
-    apiRequest(`/messages/${conversationId}/read`, {
-      method: 'POST',
-    }),
-  create: (data) =>
-    apiRequest('/messages', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
-  getGroupConversation: (groupId) =>
-    apiRequest(`/messages/group/${groupId}`, {
-      method: 'POST',
-    }),
+  markAsRead: (conversationId) => apiRequest(`/messages/${conversationId}/read`, { method: 'POST' }),
+  create: (data) => apiRequest('/messages', { method: 'POST', body: JSON.stringify(data) }),
+  getGroupConversation: (groupId) => apiRequest(`/messages/group/${groupId}`, { method: 'POST' }),
   getUnreadCount: () => apiRequest('/messages/unread'),
-  delete: (messageId) =>
-    apiRequest(`/messages/messages/${messageId}`, {
-      method: 'DELETE',
-    }),
+  delete: (messageId) => apiRequest(`/messages/messages/${messageId}`, { method: 'DELETE' }),
 };
 
 // Token management
-export const setToken = (token) => {
-  localStorage.setItem('token', token);
-};
-
-export const removeToken = () => {
-  localStorage.removeItem('token');
-};
+export const setToken = (token) => localStorage.setItem('token', token);
+export const removeToken = () => localStorage.removeItem('token');
 
 export const isAuthenticated = () => {
   const token = getToken();
   if (!token) return false;
-
   try {
-    // Decode JWT to check expiration
     const payload = JSON.parse(atob(token.split('.')[1]));
     return payload.exp * 1000 > Date.now();
   } catch {

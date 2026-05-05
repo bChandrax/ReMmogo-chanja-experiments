@@ -15,16 +15,6 @@ export default function MessagesPage() {
   const [showMobileList, setShowMobileList] = useState(true);
   const messagesEndRef = useRef(null);
 
-  // Handle conversation passed from MyGroups page
-  useEffect(() => {
-    const state = window.history.state?.usr?.state;
-    if (state?.conversation) {
-      setSelectedConversation(state.conversation);
-      fetchMessages(state.conversation.conversationid);
-      setShowMobileList(false);
-    }
-  }, []);
-
   useEffect(() => {
     fetchConversations();
   }, []);
@@ -44,10 +34,7 @@ export default function MessagesPage() {
   const fetchConversations = async () => {
     try {
       const result = await messagesAPI.getAll();
-      console.log('Conversations result:', result);
       if (result.success && Array.isArray(result.data)) {
-        setConversations(result.data);
-      } else if (result.data && Array.isArray(result.data)) {
         setConversations(result.data);
       } else {
         setConversations([]);
@@ -57,20 +44,6 @@ export default function MessagesPage() {
       setConversations([]);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const openGroupChat = async (groupId) => {
-    try {
-      // Get or create conversation for this group
-      const result = await messagesAPI.getGroupConversation(groupId);
-      if (result.success) {
-        setSelectedConversation(result.data);
-        fetchMessages(result.data.conversationid);
-        setShowMobileList(false);
-      }
-    } catch (err) {
-      console.error('Error opening group chat:', err);
     }
   };
 
@@ -95,8 +68,6 @@ export default function MessagesPage() {
       if (result.success) {
         setMessages(prev => [...prev, result.data]);
         setMessageInput('');
-        
-        // Update conversation's last message
         setConversations(prev => prev.map(conv => 
           conv.conversationid === selectedConversation.conversationid
             ? { ...conv, lastmessage: messageInput.trim(), lastmessageat: new Date().toISOString() }
@@ -113,7 +84,6 @@ export default function MessagesPage() {
   const markAsRead = async (conversationId) => {
     try {
       await messagesAPI.markAsRead(conversationId);
-      // Update local state to clear unread count
       setConversations(prev => prev.map(conv =>
         conv.conversationid === conversationId ? { ...conv, unreadcount: 0 } : conv
       ));
@@ -177,8 +147,7 @@ export default function MessagesPage() {
             <div className={`mp-conversations ${showMobileList ? 'mp-conversations--visible' : ''}`}>
               <div className="mp-header">
                 <h2 className="mp-title">Messages</h2>
-                <button className="mp-new-chat-btn" onClick={() => window.location.href = '/myGroups'}
-                  title="Join a group to start chatting">
+                <button className="mp-new-chat-btn" onClick={() => window.location.href = '/myGroups'}>
                   + New Chat
                 </button>
               </div>

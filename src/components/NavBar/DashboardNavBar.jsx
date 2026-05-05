@@ -1,5 +1,4 @@
-import { Search } from "lucide-react";
-import { Bell } from "lucide-react";
+import { Search, Bell } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 
 export default function DashboardNavBar() {

@@ -95,35 +95,35 @@ export default function SettingsPage() {
                       <label>First Name</label>
                       <div className="input-field">
                         <div className="input-icon-wrapper"><User size={18} /></div>
-                        <input type="text" defaultValue="Hello" />
+                        <input className="inner-form-input" type="text" defaultValue="Hello" />
                       </div>
                     </div>
                     <div className="form-group">
                       <label>Last Name</label>
                       <div className="input-field">
                         <div className="input-icon-wrapper"><User size={18} /></div>
-                        <input type="text" defaultValue="Parvez" />
+                        <input className="inner-form-input" type="text" defaultValue="Parvez" />
                       </div>
                     </div>
                     <div className="form-group">
                       <label>Email Address</label>
                       <div className="input-field">
                         <div className="input-icon-wrapper"><Mail size={18} /></div>
-                        <input type="email" defaultValue="hello.parvez@example.com" />
+                        <input className="inner-form-input" type="email" defaultValue="hello.parvez@example.com" />
                       </div>
                     </div>
                     <div className="form-group">
                       <label>Phone Number</label>
                       <div className="input-field">
                         <div className="input-icon-wrapper"><Phone size={18} /></div>
-                        <input type="tel" defaultValue="+267 72 123 456" />
+                        <input className="inner-form-input" type="tel" defaultValue="+267 72 123 456" />
                       </div>
                     </div>
                     <div className="form-group full-width">
                       <label>Location</label>
                       <div className="input-field">
                         <div className="input-icon-wrapper"><MapPin size={18} /></div>
-                        <input type="text" defaultValue="Gaborone, Botswana" />
+                        <input className="inner-form-input" type="text" defaultValue="Gaborone, Botswana" />
                       </div>
                     </div>
                     <div className="form-group full-width">

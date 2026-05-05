@@ -102,8 +102,8 @@ app.use("/api/messages", require("./routes/messageRoutes"));
 
 // Health check endpoint for Render
 app.get("/health", (req, res) => {
-  res.status(200).json({ 
-    status: "healthy", 
+  res.status(200).json({
+    status: "healthy",
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || "development"
   });
@@ -111,7 +111,7 @@ app.get("/health", (req, res) => {
 
 // Root endpoint
 app.get("/", (req, res) => {
-  res.json({ 
+  res.json({
     name: "Re-Mmogo API",
     version: "1.0.0",
     status: "running",
@@ -130,8 +130,8 @@ app.use((req, res) => {
 // Error handler
 app.use((err, req, res, next) => {
   console.error("Error:", err);
-  res.status(500).json({ 
-    error: process.env.NODE_ENV === "production" ? "Internal server error" : err.message 
+  res.status(500).json({
+    error: process.env.NODE_ENV === "production" ? "Internal server error" : err.message
   });
 });
 

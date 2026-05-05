@@ -430,18 +430,6 @@ body { background: #F9F7F2; font-family: 'Inter', sans-serif; }
   font-size: 16px;
 }
 
-/* Demo credentials hint */
-.login-demo-hint {
-  background: linear-gradient(135deg, #EFF6FF, #DBEAFE);
-  border: 1.5px solid #BFDBFE;
-  color: #2563EB;
-  padding: 10px 14px;
-  border-radius: 10px;
-  font: 500 12px/1.4 'Inter', sans-serif;
-  margin-bottom: 16px;
-  text-align: center;
-}
-
 /* Success message styling (for future use) */
 .login-success-message {
   background: linear-gradient(135deg, #F0FDF4, #DCFCE7);
