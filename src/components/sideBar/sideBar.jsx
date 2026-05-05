@@ -43,7 +43,7 @@ export default function SideBar() {
             {user?.firstName?.charAt(0) || "U"}
           </div>
           <div className="user-info">
-            <p>{user?.firstName ? `Hello ${user.firstName}` : "Hello User"}</p>
+            <p>{user?.firstName ? `${user.firstName}` : "User"}</p>
             <span>{user?.email || "user@example.com"}</span>
           </div>
           <button className="sidebar-logout-btn" onClick={handleLogout} title="Logout">

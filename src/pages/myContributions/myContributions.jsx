@@ -158,10 +158,7 @@ export default function MyContributions() {
   const targetAmount = 12000; // 12 months × P1000
   const pct = Math.round((paidCount / 12) * 100);
 
-  const totalAllGroups = groups.reduce((sum, g) => {
-    // This would need to fetch contributions for each group
-    return sum + paidAmount;
-  }, 0);
+  const totalAllGroups = paidAmount;
 
   return (
     <div className="dash">

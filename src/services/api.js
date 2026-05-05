@@ -76,7 +76,7 @@ export const authAPI = {
 
 // Groups API
 export const groupsAPI = {
-  getAll: () => apiRequest('/groups'),
+  getAll: () => apiRequest('/groups/mine'),
   getOne: (id) => apiRequest(`/groups/${id}`),
   create: (group) => apiRequest('/groups', { method: 'POST', body: JSON.stringify(group) }),
   update: (id, group) => apiRequest(`/groups/${id}`, { method: 'PUT', body: JSON.stringify(group) }),

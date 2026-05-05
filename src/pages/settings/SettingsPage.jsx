@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { User, Mail, Phone, MapPin, Bell, Lock, CreditCard, Shield, Eye, EyeOff, Save, Check } from "lucide-react";
 import SideBar from "../../components/sideBar/sideBar";
 import DashboardNavBar from "../../components/NavBar/DashboardNavBar";
@@ -10,29 +10,11 @@ export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState("profile");
   const [showPassword, setShowPassword] = useState(false);
   const [saved, setSaved] = useState(false);
-  
-  // Profile form state
-  const [profile, setProfile] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    location: '',
-    bio: ''
-  });
 
-  useEffect(() => {
-    if (user) {
-      setProfile({
-        firstName: user.firstName || '',
-        lastName: user.lastName || '',
-        email: user.email || '',
-        phone: user.phone || '',
-        location: user.location || '',
-        bio: user.bio || ''
-      });
-    }
-  }, [user]);
+  // Display name for payment cards — uppercase full name from logged-in user
+  const cardHolderName = user
+    ? `${user.firstName || ''} ${user.lastName || ''}`.trim().toUpperCase()
+    : 'ACCOUNT HOLDER';
 
   const handleSave = () => {
     setSaved(true);
@@ -108,9 +90,7 @@ export default function SettingsPage() {
                   </div>
 
                   <div className="profile-header">
-                    <div className="profile-avatar">
-                      {profile.firstName?.charAt(0)}{profile.lastName?.charAt(0) || ''}
-                    </div>
+                    <div className="profile-avatar">HP</div>
                     <div className="profile-actions">
                       <button className="btn-outline-sm">Change Photo</button>
                       <button className="btn-text-sm">Remove</button>
@@ -122,72 +102,44 @@ export default function SettingsPage() {
                       <label>First Name</label>
                       <div className="input-field">
                         <div className="input-icon-wrapper"><User size={18} /></div>
-                        <input 
-                          className="inner-form-input" 
-                          type="text" 
-                          value={profile.firstName}
-                          onChange={(e) => setProfile({...profile, firstName: e.target.value})}
-                        />
+                        <input className="inner-form-input" type="text" defaultValue="Hello" />
                       </div>
                     </div>
                     <div className="form-group">
                       <label>Last Name</label>
                       <div className="input-field">
                         <div className="input-icon-wrapper"><User size={18} /></div>
-                        <input 
-                          className="inner-form-input" 
-                          type="text" 
-                          value={profile.lastName}
-                          onChange={(e) => setProfile({...profile, lastName: e.target.value})}
-                        />
+                        <input className="inner-form-input" type="text" defaultValue="Parvez" />
                       </div>
                     </div>
                     <div className="form-group">
                       <label>Email Address</label>
                       <div className="input-field">
                         <div className="input-icon-wrapper"><Mail size={18} /></div>
-                        <input 
-                          className="inner-form-input" 
-                          type="email" 
-                          value={profile.email}
-                          onChange={(e) => setProfile({...profile, email: e.target.value})}
-                        />
+                        <input className="inner-form-input" type="email" defaultValue="hello.parvez@example.com" />
                       </div>
                     </div>
                     <div className="form-group">
                       <label>Phone Number</label>
                       <div className="input-field">
                         <div className="input-icon-wrapper"><Phone size={18} /></div>
-                        <input 
-                          className="inner-form-input" 
-                          type="tel" 
-                          value={profile.phone}
-                          onChange={(e) => setProfile({...profile, phone: e.target.value})}
-                          placeholder="+267 00 000 000"
-                        />
+                        <input className="inner-form-input" type="tel" defaultValue="+267 72 123 456" />
                       </div>
                     </div>
                     <div className="form-group full-width">
                       <label>Location</label>
                       <div className="input-field">
                         <div className="input-icon-wrapper"><MapPin size={18} /></div>
-                        <input 
-                          className="inner-form-input" 
-                          type="text" 
-                          value={profile.location}
-                          onChange={(e) => setProfile({...profile, location: e.target.value})}
-                          placeholder="City, Botswana"
-                        />
+                        <input className="inner-form-input" type="text" defaultValue="Gaborone, Botswana" />
                       </div>
                     </div>
                     <div className="form-group full-width">
                       <label>Bio</label>
-                      <textarea
-                        className="form-input"
-                        rows={4}
-                        placeholder="Tell us about yourself..."
-                        value={profile.bio}
-                        onChange={(e) => setProfile({...profile, bio: e.target.value})}
+                      <textarea 
+                        className="form-input" 
+                        rows={4} 
+                        placeholder="Tell us about yourself..." 
+                        defaultValue="Active member of multiple savings groups. Passionate about community development and financial literacy." 
                       />
                     </div>
                   </div>
@@ -280,37 +232,6 @@ export default function SettingsPage() {
                     <p className="section-desc">Manage your password and security preferences</p>
                   </div>
 
-                  {/* User Account Information */}
-                  <div className="security-section">
-                    <h3>Account Information</h3>
-                    <div className="form-grid">
-                      <div className="form-group">
-                        <label>Full Name</label>
-                        <div className="input-field">
-                          <div className="input-icon-wrapper"><User size={18} /></div>
-                          <input 
-                            type="text" 
-                            value={`${profile.firstName} ${profile.lastName}`.trim() || 'Not set'} 
-                            readOnly 
-                            className="read-only-field"
-                          />
-                        </div>
-                      </div>
-                      <div className="form-group">
-                        <label>Email Address</label>
-                        <div className="input-field">
-                          <div className="input-icon-wrapper"><Mail size={18} /></div>
-                          <input 
-                            type="email" 
-                            value={profile.email || 'Not set'} 
-                            readOnly 
-                            className="read-only-field"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
                   <div className="security-section">
                     <h3>Change Password</h3>
                     <div className="form-grid">
@@ -319,7 +240,7 @@ export default function SettingsPage() {
                         <div className="input-field">
                           <div className="input-icon-wrapper"><Lock size={18} /></div>
                           <input type={showPassword ? "text" : "password"} placeholder="Enter current password" />
-                          <button
+                          <button 
                             className="password-toggle"
                             onClick={() => setShowPassword(!showPassword)}
                           >
@@ -406,7 +327,7 @@ export default function SettingsPage() {
                         <span className="card-badge primary">Primary</span>
                       </div>
                       <div className="card-footer">
-                        <span className="card-holder">HELLO PARVEZ</span>
+                        <span className="card-holder">{cardHolderName}</span>
                         <span className="card-expires">Expires 12/27</span>
                       </div>
                     </div>
@@ -422,7 +343,7 @@ export default function SettingsPage() {
                         </div>
                       </div>
                       <div className="card-footer">
-                        <span className="card-holder">HELLO PARVEZ</span>
+                        <span className="card-holder">{cardHolderName}</span>
                         <span className="card-expires">Expires 08/26</span>
                       </div>
                     </div>
