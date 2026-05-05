@@ -80,25 +80,17 @@ export default function ExplorePage() {
 
   const handleJoinRequest = async () => {
     if (!joinGroup) return;
-    
+
     try {
       setJoining(true);
-      
-      // Get current user from localStorage
-      const token = localStorage.getItem('token');
-      if (!token) {
-        alert('Please login to join a group');
-        window.location.href = '/login';
-        return;
-      }
-      
-      // Send join request to backend
-      const response = await membersAPI.create(joinGroup.groupid, {
+
+      // Send join request to backend (uses auth token from request)
+      const response = await membersAPI.create(joinGroup.groupid, 'join', {
         message: joinMessage || null,
       });
-      
+
       if (response.success) {
-        alert('Join request sent successfully! The signatories will review your request.');
+        alert('Join request sent successfully! The signatories will review your request and you will be notified of their decision.');
         setJoinGroup(null);
         setJoinMessage('');
       } else {

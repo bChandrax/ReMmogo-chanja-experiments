@@ -98,6 +98,7 @@ app.use("/api/contributions", require("./routes/contributionRoutes"));
 app.use("/api/loans", require("./routes/loanRoutes"));
 app.use("/api/reports", require("./routes/reportRoutes"));
 app.use("/api/messages", require("./routes/messageRoutes"));
+app.use("/api/notifications", require("./routes/notificationRoutes"));
 
 // Health check endpoint for Render
 app.get("/health", (req, res) => {

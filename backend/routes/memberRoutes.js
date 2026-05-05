@@ -1,8 +1,9 @@
 const express = require("express");
 const router = express.Router();
-const { enrollMember, getGroupMembers, getMemberBalance, getAllMemberBalances, removeMember, getGroupSignatories } = require("../controllers/memberController");
+const { enrollMember, getGroupMembers, getMemberBalance, getAllMemberBalances, removeMember, getGroupSignatories, requestToJoin } = require("../controllers/memberController");
 const { protect } = require("../middleware/authMiddleware");
 
+router.post("/:groupId/join", protect, requestToJoin);
 router.post("/:groupId/enroll", protect, enrollMember);
 router.get("/:groupId", protect, getGroupMembers);
 router.get("/:groupId/signatories", protect, getGroupSignatories);
