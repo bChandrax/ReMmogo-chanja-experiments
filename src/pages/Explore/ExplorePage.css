@@ -227,3 +227,105 @@ body {
   cursor: pointer;
 }
 .ep-modal-submit:hover { background: #3b5e1a; }
+
+/* Loading and error states */
+.loading-state, .error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+  color: #888;
+  min-height: 300px;
+}
+
+.error-state h3 {
+  font-size: 16px;
+  color: #1a1a18;
+  margin-bottom: 8px;
+}
+
+.error-state button, .ep-retry-btn {
+  margin-top: 16px;
+  padding: 8px 20px;
+  background: #2c3e1f;
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.error-state button:hover, .ep-retry-btn:hover {
+  background: #3b5e1a;
+}
+
+/* ================================
+   Responsive Design
+   ================================ */
+
+@media (max-width: 1024px) {
+  .ep-groups-grid {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 768px) {
+  .ep-content {
+    padding: 16px;
+  }
+  
+  .ep-page-header {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .ep-header-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  
+  .ep-groups-grid {
+    flex-direction: column;
+  }
+  
+  .ep-card-wrap {
+    width: 100%;
+  }
+  
+  .ep-modal {
+    width: 95vw;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .ep-content {
+    padding: 12px;
+  }
+  
+  .ep-page-title {
+    font-size: 14px;
+  }
+  
+  .ep-page-sub {
+    font-size: 10px;
+  }
+  
+  .ep-back-link, .ep-create-btn {
+    padding: 5px 10px;
+    font-size: 10px;
+  }
+  
+  .ep-search-input {
+    font-size: 11px;
+  }
+  
+  .ep-join-btn {
+    padding: 4px 10px;
+    font-size: 9px;
+  }
+}

@@ -1,61 +1,154 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import SideBar from '../../components/sideBar/sideBar';
 import './myLoans.css';
 import DashboardNavBar from '../../components/NavBar/DashboardNavBar';
-
-const LOANS = [
-  {
-    id: 'LN-001',
-    group: 'Botho Savings Circle',
-    principal: 5000,
-    balance: 3200,
-    monthlyInterest: 640,
-    disbursedDate: 'Jan 15, 2026',
-    dueDate: 'Jul 15, 2026',
-    status: 'Active',
-    approvals: 2,
-    payments: [
-      { month: 'Feb 2026', amount: 1640, status: 'Approved' },
-      { month: 'Mar 2026', amount: 1640, status: 'Approved' },
-      { month: 'Apr 2026', amount: 1640, status: 'Pending' },
-    ],
-  },
-  {
-    id: 'LN-002',
-    group: 'Kgotso Family Group',
-    principal: 3000,
-    balance: 0,
-    monthlyInterest: 0,
-    disbursedDate: 'Oct 5, 2025',
-    dueDate: 'Apr 5, 2026',
-    status: 'Settled',
-    approvals: 2,
-    payments: [
-      { month: 'Nov 2025', amount: 1060, status: 'Approved' },
-      { month: 'Dec 2025', amount: 1060, status: 'Approved' },
-      { month: 'Jan 2026', amount: 880, status: 'Approved' },
-    ],
-  },
-];
+import { loansAPI, groupsAPI } from '../../services/api';
 
 const STATUS_COLOR = {
-  Active: { bg: '#e8f0e0', color: '#2c3e1f' },
-  Settled: { bg: '#f0f0f0', color: '#888' },
-  Pending: { bg: '#fff8e0', color: '#a07800' },
+  active: { bg: '#e8f0e0', color: '#2c3e1f', label: 'Active' },
+  settled: { bg: '#f0f0f0', color: '#888', label: 'Settled' },
+  pending: { bg: '#fff8e0', color: '#a07800', label: 'Pending' },
+  rejected: { bg: '#fce8e8', color: '#c0392b', label: 'Rejected' },
 };
 
 export default function MyLoans() {
-  const [selected, setSelected] = useState(0);
+  const [groups, setGroups] = useState([]);
+  const [loans, setLoans] = useState([]);
+  const [selectedLoanIndex, setSelectedLoanIndex] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [showRequest, setShowRequest] = useState(false);
-  const [reqForm, setReqForm] = useState({ group: '', amount: '', purpose: '' });
+  const [reqForm, setReqForm] = useState({ groupid: '', amount: '', purpose: '' });
+  const [requesting, setRequesting] = useState(false);
 
-  const active = LOANS.filter((l) => l.status === 'Active');
-  const totalOwed = active.reduce((s, l) => s + l.balance, 0);
-  const totalInterest = active.reduce((s, l) => s + l.monthlyInterest, 0);
+  useEffect(() => {
+    fetchData();
+  }, []);
 
-  const loan = LOANS[selected];
-  const paid = loan.principal - loan.balance;
-  const pct = Math.round((paid / loan.principal) * 100);
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Fetch user's groups
+      const groupsRes = await groupsAPI.getAll();
+      if (groupsRes.success && groupsRes.data) {
+        setGroups(groupsRes.data);
+      }
+
+      // Fetch all loans
+      const loansRes = await loansAPI.getAll();
+      if (loansRes.success && loansRes.data) {
+        setLoans(loansRes.data);
+        
+        // Select first active loan by default, or first loan
+        const activeIndex = loansRes.data.findIndex(l => l.status === 'active');
+        setSelectedLoanIndex(activeIndex >= 0 ? activeIndex : (loansRes.data.length > 0 ? 0 : null));
+      }
+    } catch (err) {
+      console.error('Error fetching data:', err);
+      setError('Unable to connect to server');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRequestLoan = async () => {
+    if (!reqForm.groupid || !reqForm.amount) {
+      alert('Please select a group and enter an amount');
+      return;
+    }
+
+    try {
+      setRequesting(true);
+
+      const response = await loansAPI.create({
+        groupid: reqForm.groupid,
+        principalamount: parseFloat(reqForm.amount),
+        purpose: reqForm.purpose || null,
+        status: 'pending',
+        interestrate: 20, // 20% monthly interest
+      });
+
+      if (response.success) {
+        alert('Loan request submitted for approval');
+        setShowRequest(false);
+        setReqForm({ groupid: '', amount: '', purpose: '' });
+        fetchData(); // Refresh data
+      } else {
+        alert(response.error || 'Failed to submit loan request');
+      }
+    } catch (err) {
+      console.error('Error submitting loan request:', err);
+      alert('Failed to submit loan request. Please try again.');
+    } finally {
+      setRequesting(false);
+    }
+  };
+
+  const handleRepayLoan = async (loanId, amount) => {
+    try {
+      const response = await loansAPI.create(loanId, {
+        amountpaid: amount,
+        status: 'pending',
+      });
+
+      if (response.success) {
+        alert('Repayment submitted for approval');
+        fetchData();
+      } else {
+        alert(response.error || 'Failed to submit repayment');
+      }
+    } catch (err) {
+      console.error('Error submitting repayment:', err);
+      alert('Failed to submit repayment. Please try again.');
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="dash">
+        <SideBar />
+        <div className="main">
+          <DashboardNavBar />
+          <div className="ml-content">
+            <div className="loading-state">Loading loans...</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="dash">
+        <SideBar />
+        <div className="main">
+          <DashboardNavBar />
+          <div className="ml-content">
+            <div className="error-state">
+              <h3>Oops! Something went wrong</h3>
+              <p>{error}</p>
+              <button onClick={fetchData} className="ml-retry-btn">Try Again</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const activeLoans = loans.filter((l) => l.status === 'active');
+  const totalOwed = activeLoans.reduce((sum, l) => sum + (l.outstandingbalance || 0), 0);
+  const totalMonthlyInterest = activeLoans.reduce((sum, l) => {
+    const balance = l.outstandingbalance || 0;
+    return sum + (balance * 0.20); // 20% monthly interest
+  }, 0);
+
+  const selectedLoan = selectedLoanIndex !== null ? loans[selectedLoanIndex] : null;
+  const paid = selectedLoan ? (selectedLoan.principalamount || 0) - (selectedLoan.outstandingbalance || 0) : 0;
+  const pct = selectedLoan && selectedLoan.principalamount > 0
+    ? Math.round((paid / selectedLoan.principalamount) * 100)
+    : 0;
 
   return (
     <div className="dash">
@@ -78,7 +171,7 @@ export default function MyLoans() {
           {/* Summary */}
           <div className="ml-summary-strip">
             <div className="ml-summary-item">
-              <span className="ml-summary-value">{active.length}</span>
+              <span className="ml-summary-value">{activeLoans.length}</span>
               <span className="ml-summary-label">Active Loans</span>
             </div>
             <div className="ml-summary-divider" />
@@ -88,7 +181,7 @@ export default function MyLoans() {
             </div>
             <div className="ml-summary-divider" />
             <div className="ml-summary-item">
-              <span className="ml-summary-value">P{totalInterest.toLocaleString()}</span>
+              <span className="ml-summary-value">P{Math.round(totalMonthlyInterest).toLocaleString()}</span>
               <span className="ml-summary-label">Monthly Interest</span>
             </div>
             <div className="ml-summary-divider" />
@@ -102,112 +195,98 @@ export default function MyLoans() {
             {/* Loan list */}
             <div className="ml-list">
               <div className="ml-section-label">All Loans</div>
-              {LOANS.map((l, i) => (
-                <div
-                  key={l.id}
-                  className={`ml-loan-item${selected === i ? ' ml-loan-item--active' : ''}`}
-                  onClick={() => setSelected(i)}
-                >
-                  <div className="ml-loan-item-top">
-                    <span className="ml-loan-id">{l.id}</span>
-                    <span
-                      className="ml-loan-status"
-                      style={STATUS_COLOR[l.status]}
-                    >
-                      {l.status}
-                    </span>
+              {loans.length > 0 ? (
+                loans.map((l, i) => (
+                  <div
+                    key={l.loanid}
+                    className={`ml-loan-item${selectedLoanIndex === i ? ' ml-loan-item--active' : ''}`}
+                    onClick={() => setSelectedLoanIndex(i)}
+                  >
+                    <div className="ml-loan-item-top">
+                      <span className="ml-loan-id">{l.loanid || `LN-${String(i + 1).padStart(3, '0')}`}</span>
+                      <span
+                        className="ml-loan-status"
+                        style={STATUS_COLOR[l.status] || STATUS_COLOR.pending}
+                      >
+                        {STATUS_COLOR[l.status]?.label || l.status}
+                      </span>
+                    </div>
+                    <div className="ml-loan-group">{l.groupname || 'Unknown Group'}</div>
+                    <div className="ml-loan-item-amounts">
+                      <span>Principal: P{(l.principalamount || 0).toLocaleString()}</span>
+                      <span className="ml-balance">Balance: P{(l.outstandingbalance || 0).toLocaleString()}</span>
+                    </div>
                   </div>
-                  <div className="ml-loan-group">{l.group}</div>
-                  <div className="ml-loan-item-amounts">
-                    <span>Principal: P{l.principal.toLocaleString()}</span>
-                    <span className="ml-balance">Balance: P{l.balance.toLocaleString()}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Loan detail */}
-            <div className="ml-detail">
-              <div className="ml-detail-header">
-                <div>
-                  <div className="ml-detail-id">{loan.id} — {loan.group}</div>
-                  <div className="ml-detail-dates">
-                    Disbursed {loan.disbursedDate} &nbsp;·&nbsp; Due {loan.dueDate}
-                  </div>
-                </div>
-                <span className="ml-loan-status" style={STATUS_COLOR[loan.status]}>
-                  {loan.status}
-                </span>
-              </div>
-
-              {/* Repayment progress */}
-              <div className="ml-detail-panel">
-                <div className="ml-detail-panel-title">Repayment Progress</div>
-                <div className="ml-repay-grid">
-                  <div className="ml-repay-stat">
-                    <span className="ml-repay-val">P{loan.principal.toLocaleString()}</span>
-                    <span className="ml-repay-lbl">Principal</span>
-                  </div>
-                  <div className="ml-repay-stat">
-                    <span className="ml-repay-val">P{paid.toLocaleString()}</span>
-                    <span className="ml-repay-lbl">Paid</span>
-                  </div>
-                  <div className="ml-repay-stat">
-                    <span className="ml-repay-val ml-balance">P{loan.balance.toLocaleString()}</span>
-                    <span className="ml-repay-lbl">Remaining</span>
-                  </div>
-                  <div className="ml-repay-stat">
-                    <span className="ml-repay-val">P{loan.monthlyInterest.toLocaleString()}</span>
-                    <span className="ml-repay-lbl">Monthly Interest</span>
-                  </div>
-                </div>
-                <div className="ml-prog-bar-wrap">
-                  <div className="ml-prog-bar">
-                    <div className="ml-prog-fill" style={{ width: `${pct}%` }} />
-                  </div>
-                  <span className="ml-prog-pct">{pct}% repaid</span>
-                </div>
-              </div>
-
-              {/* Payment history */}
-              <div className="ml-detail-panel">
-                <div className="ml-detail-panel-title">Payment History</div>
-                {loan.payments.length === 0 && (
-                  <p className="ml-empty">No payments recorded yet.</p>
-                )}
-                <table className="ml-table">
-                  <thead>
-                    <tr>
-                      <th>Month</th>
-                      <th>Amount</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {loan.payments.map((p, i) => (
-                      <tr key={i}>
-                        <td>{p.month}</td>
-                        <td>P{p.amount.toLocaleString()}</td>
-                        <td>
-                          <span
-                            className="ml-loan-status"
-                            style={STATUS_COLOR[p.status] || STATUS_COLOR['Pending']}
-                          >
-                            {p.status}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {loan.status === 'Active' && (
-                <div className="ml-info-note">
-                  <span>⚠</span> Interest of 20% is charged on outstanding balance each month. Repayments must be approved by 2 signatories to reflect.
+                ))
+              ) : (
+                <div className="ml-empty-list">
+                  <p>No loans found</p>
+                  <button onClick={() => setShowRequest(true)} className="ml-request-first-btn">
+                    Request Your First Loan
+                  </button>
                 </div>
               )}
             </div>
+
+            {/* Loan detail */}
+            {selectedLoan && (
+              <div className="ml-detail">
+                <div className="ml-detail-header">
+                  <div>
+                    <div className="ml-detail-id">
+                      {selectedLoan.loanid || `LN-${String(loans.indexOf(selectedLoan) + 1).padStart(3, '0')}`} — {selectedLoan.groupname || 'Unknown Group'}
+                    </div>
+                    <div className="ml-detail-dates">
+                      Disbursed {selectedLoan.createdat ? new Date(selectedLoan.createdat).toLocaleDateString('en-GB', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Unknown'} · Due {selectedLoan.duedate ? new Date(selectedLoan.duedate).toLocaleDateString('en-GB', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Unknown'}
+                    </div>
+                  </div>
+                  <span className="ml-loan-status" style={STATUS_COLOR[selectedLoan.status] || STATUS_COLOR.pending}>
+                    {STATUS_COLOR[selectedLoan.status]?.label || selectedLoan.status}
+                  </span>
+                </div>
+
+                {/* Repayment progress */}
+                <div className="ml-detail-panel">
+                  <div className="ml-detail-panel-title">Repayment Progress</div>
+                  <div className="ml-repay-grid">
+                    <div className="ml-repay-stat">
+                      <span className="ml-repay-val">P{(selectedLoan.principalamount || 0).toLocaleString()}</span>
+                      <span className="ml-repay-lbl">Principal</span>
+                    </div>
+                    <div className="ml-repay-stat">
+                      <span className="ml-repay-val">P{paid.toLocaleString()}</span>
+                      <span className="ml-repay-lbl">Paid</span>
+                    </div>
+                    <div className="ml-repay-stat">
+                      <span className="ml-repay-val ml-balance">P{(selectedLoan.outstandingbalance || 0).toLocaleString()}</span>
+                      <span className="ml-repay-lbl">Remaining</span>
+                    </div>
+                    <div className="ml-repay-stat">
+                      <span className="ml-repay-val">P{Math.round((selectedLoan.outstandingbalance || 0) * 0.20).toLocaleString()}</span>
+                      <span className="ml-repay-lbl">Monthly Interest</span>
+                    </div>
+                  </div>
+                  <div className="ml-prog-bar-wrap">
+                    <div className="ml-prog-bar">
+                      <div className="ml-prog-fill" style={{ width: `${pct}%` }} />
+                    </div>
+                    <span className="ml-prog-pct">{pct}% repaid</span>
+                  </div>
+                </div>
+
+                {/* Payment history placeholder */}
+                <div className="ml-detail-panel">
+                  <div className="ml-detail-panel-title">Payment History</div>
+                  <p className="ml-empty">Payment history will appear here once repayments are recorded.</p>
+                </div>
+
+                {selectedLoan.status === 'active' && (
+                  <div className="ml-info-note">
+                    <span>⚠</span> Interest of 20% is charged on outstanding balance each month. Repayments must be approved by 2 signatories to reflect.
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -223,11 +302,14 @@ export default function MyLoans() {
             <div className="ml-modal-body">
               <p className="ml-modal-note">Loans are charged 20% interest on outstanding balance per month. Both signatories must approve before disbursement.</p>
               <label>Group</label>
-              <select value={reqForm.group} onChange={(e) => setReqForm({ ...reqForm, group: e.target.value })}>
+              <select 
+                value={reqForm.groupid} 
+                onChange={(e) => setReqForm({ ...reqForm, groupid: e.target.value })}
+              >
                 <option value="">Select a group</option>
-                <option>Botho Savings Circle</option>
-                <option>Kgotso Family Group</option>
-                <option>Thuto Investment Club</option>
+                {groups.map((g) => (
+                  <option key={g.groupid} value={g.groupid}>{g.groupname}</option>
+                ))}
               </select>
               <label>Loan Amount (P)</label>
               <input
@@ -243,8 +325,12 @@ export default function MyLoans() {
                 value={reqForm.purpose}
                 onChange={(e) => setReqForm({ ...reqForm, purpose: e.target.value })}
               />
-              <button className="ml-modal-submit" onClick={() => setShowRequest(false)}>
-                Submit Request
+              <button 
+                className="ml-modal-submit" 
+                onClick={handleRequestLoan}
+                disabled={requesting}
+              >
+                {requesting ? 'Submitting...' : 'Submit Request'}
               </button>
             </div>
           </div>

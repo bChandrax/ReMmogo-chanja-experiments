@@ -372,3 +372,171 @@ body{
 .create-group-link:hover {
   background: #3b5e1a;
 }
+
+/* Loading and error states */
+.loading-state, .error-state, .empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+  color: #888;
+}
+
+.error-state h3 {
+  font-size: 16px;
+  color: #c0392b;
+  margin-bottom: 8px;
+}
+
+.error-state button, .empty-state button {
+  margin-top: 16px;
+  padding: 8px 20px;
+  background: #2c3e1f;
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.error-state button:hover, .empty-state button:hover {
+  background: #3b5e1a;
+}
+
+.empty-state {
+  font-size: 13px;
+  padding: 40px 20px;
+}
+
+/* Transaction amount colors */
+.txn-positive {
+  color: #3b6d11 !important;
+}
+
+/* ================================
+   Responsive Design - Mobile First
+   ================================ */
+
+/* Tablet and below */
+@media (max-width: 1024px) {
+  .content {
+    grid-template-columns: 1fr;
+  }
+  
+  .bills-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* Mobile - phones */
+@media (max-width: 768px) {
+  .dash {
+    flex-direction: column;
+  }
+  
+  .main {
+    width: 100%;
+  }
+  
+  .content {
+    padding: 0;
+  }
+  
+  .panel {
+    margin: 5px 0;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+  }
+  
+  .panel:first-child {
+    border-top: none;
+  }
+  
+  .panel:last-child {
+    border-bottom: none;
+  }
+  
+  .bills-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  
+  .bill-card {
+    padding: 12px;
+  }
+  
+  .panel-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .see-all {
+    font-size: 12px;
+  }
+  
+  .gauge-wrap {
+    height: 150px;
+  }
+  
+  .alloc-bar {
+    height: 10px;
+  }
+  
+  .bar-legend {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  .alloc-table {
+    font-size: 10px;
+  }
+  
+  .txn-row {
+    padding: 10px 0;
+  }
+  
+  .txn-icon {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .txn-name {
+    font-size: 11px;
+  }
+  
+  .txn-cat {
+    font-size: 9px;
+  }
+  
+  .txn-amount {
+    font-size: 11px;
+  }
+}
+
+/* Small phones */
+@media (max-width: 480px) {
+  body {
+    font-size: 12px;
+  }
+  
+  .bill-label {
+    font-size: 9px;
+  }
+  
+  .bill-amount {
+    font-size: 13px;
+  }
+  
+  .gauge-label {
+    bottom: 5px;
+  }
+  
+  .gauge-amount {
+    font-size: 14px;
+  }
+}

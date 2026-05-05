@@ -248,3 +248,137 @@ body {
   border-top: 0.5px solid #e0ddd5;
   padding-top: 10px;
 }
+
+/* Loading and error states */
+.loading-state, .error-state, .gd-empty-state, .gd-empty-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+  color: #888;
+  min-height: 200px;
+}
+
+.error-state h3 {
+  font-size: 16px;
+  color: #1a1a18;
+  margin-bottom: 8px;
+}
+
+.error-state button, .gd-retry-btn {
+  margin-top: 16px;
+  padding: 8px 20px;
+  background: #2c3e1f;
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.error-state button:hover, .gd-retry-btn:hover {
+  background: #3b5e1a;
+}
+
+.gd-empty-cell {
+  padding: 30px;
+  font-style: italic;
+}
+
+/* ================================
+   Responsive Design
+   ================================ */
+
+@media (max-width: 1024px) {
+  .gd-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .gd-content {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .gd-content {
+    padding: 12px;
+  }
+  
+  .gd-group-header {
+    flex-direction: column;
+    padding: 16px;
+  }
+  
+  .gd-group-avatar {
+    width: 40px;
+    height: 40px;
+    font-size: 14px;
+  }
+  
+  .gd-group-name {
+    font-size: 14px;
+  }
+  
+  .gd-stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .gd-tabs {
+    overflow-x: auto;
+    width: 100%;
+    flex-wrap: nowrap;
+  }
+  
+  .gd-tab {
+    white-space: nowrap;
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+  
+  .gd-table {
+    font-size: 10px;
+  }
+  
+  .gd-table th, .gd-table td {
+    padding: 6px 4px;
+  }
+  
+  .gd-approval-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .gd-approval-actions {
+    width: 100%;
+    margin-top: 8px;
+  }
+  
+  .gd-btn-approve, .gd-btn-reject {
+    flex: 1;
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .gd-content {
+    padding: 8px;
+  }
+  
+  .gd-page-title {
+    font-size: 14px;
+  }
+  
+  .gd-member-avatar {
+    width: 20px;
+    height: 20px;
+    font-size: 8px;
+  }
+  
+  .gd-status-badge {
+    font-size: 8px;
+    padding: 2px 6px;
+  }
+}
