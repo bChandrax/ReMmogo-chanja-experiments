@@ -7,3 +7,6 @@
 body {
   background: rgb(255, 255, 255);
 }
+
+/* ── Global Responsive Overrides ── */
+@import './responsiveness.css';
