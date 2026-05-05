@@ -44,16 +44,25 @@ export default function CreateGroup() {
       }
 
       // Prepare data for backend
+      // Build safe start/end dates — appending '-01' ensures a valid date string
+      // when the browser gives us "YYYY-MM" from <input type="month">
+      const startBase = form.startMonth
+        ? new Date(form.startMonth + '-01')
+        : new Date();
+      startBase.setDate(1);
+      startBase.setHours(0, 0, 0, 0);
+
+      const endBase = new Date(startBase);
+      endBase.setFullYear(endBase.getFullYear() + 1);
+
       const groupData = {
         groupname: form.name,
         description: form.description || null,
         monthlycontribution: form.monthlyContribution,
         requiredinterest: form.interestTarget,
         loaninterestrate: 20, // 20% monthly interest
-        yearstartdate: form.startMonth ? new Date(form.startMonth).toISOString() : new Date().toISOString(),
-        yearenddate: form.startMonth 
-          ? new Date(new Date(form.startMonth).setFullYear(new Date(form.startMonth).getFullYear() + 1)).toISOString()
-          : new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString(),
+        yearstartdate: startBase.toISOString(),
+        yearenddate: endBase.toISOString(),
         maxmembers: form.maxMembers,
         isactive: true,
         isopen: form.isOpen,
