@@ -89,7 +89,12 @@ export const membersAPI = {
   getAll: (groupId) => apiRequest(`/members/${groupId}`),
   getSignatories: (groupId) => apiRequest(`/members/${groupId}/signatories`),
   getOne: (id) => apiRequest(`/members/${id}`),
-  create: (groupId, data) => apiRequest(`/members/${groupId}/enroll`, { method: 'POST', body: JSON.stringify(data) }),
+  create: (groupId, action = 'enroll', data) => {
+    if (action === 'join') {
+      return apiRequest(`/members/${groupId}/join`, { method: 'POST', body: JSON.stringify(data) });
+    }
+    return apiRequest(`/members/${groupId}/enroll`, { method: 'POST', body: JSON.stringify(data) });
+  },
   update: (id, member) => apiRequest(`/members/${id}`, { method: 'PUT', body: JSON.stringify(member) }),
   delete: (groupId, memberId) => apiRequest(`/members/${groupId}/${memberId}`, { method: 'DELETE' }),
 };
@@ -157,6 +162,22 @@ export const messagesAPI = {
   getGroupConversation: (groupId) => apiRequest(`/messages/group/${groupId}`, { method: 'POST' }),
   getUnreadCount: () => apiRequest('/messages/unread'),
   delete: (messageId) => apiRequest(`/messages/messages/${messageId}`, { method: 'DELETE' }),
+};
+
+// Notifications API
+export const notificationsAPI = {
+  getAll: (params = {}) => {
+    const queryParams = new URLSearchParams();
+    if (params.limit) queryParams.set('limit', params.limit);
+    if (params.unreadOnly) queryParams.set('unreadOnly', params.unreadOnly);
+    return apiRequest(`/notifications?${queryParams}`);
+  },
+  getUnreadCount: () => apiRequest('/notifications/unread'),
+  markAsRead: (notificationId) => apiRequest(`/notifications/${notificationId}/read`, { method: 'POST' }),
+  markAllAsRead: () => apiRequest('/notifications/mark-all-read', { method: 'POST' }),
+  getPendingRequests: (groupId) => apiRequest(`/notifications/membership-requests/${groupId}`),
+  approveRequest: (requestId) => apiRequest(`/notifications/membership-requests/${requestId}/approve`, { method: 'POST' }),
+  rejectRequest: (requestId, reason) => apiRequest(`/notifications/membership-requests/${requestId}/reject`, { method: 'POST', body: JSON.stringify({ reason }) }),
 };
 
 // Token management
