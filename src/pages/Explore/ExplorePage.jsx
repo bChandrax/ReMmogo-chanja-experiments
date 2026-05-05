@@ -196,14 +196,12 @@ export default function ExplorePage() {
                   </Link>
                   <div className="ep-card-meta">
                     <span className="ep-location">📍 {g.location}</span>
-                    {g.open ? (
+                    {(g.memberCount || 0) < 12 ? (
                       <button className="ep-join-btn" onClick={(e) => { e.preventDefault(); setJoinGroup(g); }}>
                         Request to Join
                       </button>
                     ) : (
-                      <span className="ep-closed-badge">
-                        {g.isactive ? 'Full' : 'Inactive'}
-                      </span>
+                      <span className="ep-closed-badge">Full</span>
                     )}
                   </div>
                 </div>

@@ -10,6 +10,8 @@ export default function MyGroups() {
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [leaveGroup, setLeaveGroup] = useState(null);
+  const [leaving, setLeaving] = useState(false);
 
   useEffect(() => {
     fetchMyGroups();
@@ -49,6 +51,50 @@ export default function MyGroups() {
       setError('Unable to connect to server');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleLeaveGroup = async () => {
+    if (!leaveGroup) return;
+
+    try {
+      setLeaving(true);
+
+      // Get current user's member ID in this group
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert('Please login to leave a group');
+        window.location.href = '/login';
+        return;
+      }
+
+      // Decode token to get user ID
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const userId = payload.id || payload.userid;
+
+      // First, get the member ID for this user in this group
+      const membersRes = await membersAPI.getAll(leaveGroup.groupid);
+      const member = membersRes.data?.find(m => m.userid === userId);
+
+      if (member && member.memberid) {
+        // Remove member from group
+        const response = await membersAPI.delete(leaveGroup.groupid, member.memberid);
+
+        if (response.success) {
+          alert('You have left the group successfully');
+          setLeaveGroup(null);
+          fetchMyGroups(); // Refresh the list
+        } else {
+          alert(response.error || 'Failed to leave group');
+        }
+      } else {
+        alert('Could not find your membership in this group');
+      }
+    } catch (err) {
+      console.error('Error leaving group:', err);
+      alert('Failed to leave group. Please try again.');
+    } finally {
+      setLeaving(false);
     }
   };
 
@@ -146,9 +192,21 @@ export default function MyGroups() {
               <div className="mg-section-label">Your Groups</div>
               <div className="groups-list">
                 {groups.map((group) => (
-                  <Link to={`/GrpDash?id=${group.groupid}`} key={group.groupid}>
-                    <GroupCard {...group} colorIndex={group.colorIndex} />
-                  </Link>
+                  <div key={group.groupid} className="mg-group-card-wrapper">
+                    <Link to={`/GrpDash?id=${group.groupid}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                      <GroupCard {...group} colorIndex={group.colorIndex} />
+                    </Link>
+                    <div className="mg-card-actions">
+                      <button 
+                        className="mg-leave-btn" 
+                        onClick={(e) => { e.preventDefault(); setLeaveGroup(group); }}
+                        disabled={group.role === 'admin' && groups.length === 1}
+                        title={group.role === 'admin' && groups.length === 1 ? 'Cannot leave - you are the only admin' : 'Leave this group'}
+                      >
+                        Leave Group
+                      </button>
+                    </div>
+                  </div>
                 ))}
               </div>
             </>
@@ -178,6 +236,39 @@ export default function MyGroups() {
 
         </div>
       </div>
+
+      {/* Leave group confirmation modal */}
+      {leaveGroup && (
+        <div className="mg-modal-overlay" onClick={() => setLeaveGroup(null)}>
+          <div className="mg-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="mg-modal-header">
+              <span>Leave Group</span>
+              <button className="mg-modal-close" onClick={() => setLeaveGroup(null)}>✕</button>
+            </div>
+            <div className="mg-modal-body">
+              <div className="mg-modal-group-name">{leaveGroup.groupName}</div>
+              <p className="mg-modal-note">
+                Are you sure you want to leave this group? You will lose access to group contributions, loans, and messages.
+              </p>
+              <p className="mg-modal-warning">
+                ⚠️ This action cannot be undone. You will need to request to join again if you change your mind.
+              </p>
+              <div className="mg-modal-actions">
+                <button className="mg-modal-cancel" onClick={() => setLeaveGroup(null)}>
+                  Cancel
+                </button>
+                <button 
+                  className="mg-modal-submit mg-modal-submit--danger" 
+                  onClick={handleLeaveGroup}
+                  disabled={leaving}
+                >
+                  {leaving ? 'Leaving...' : 'Leave Group'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
