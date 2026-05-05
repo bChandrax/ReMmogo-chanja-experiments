@@ -46,16 +46,16 @@ export default function CreateGroup() {
       endBase.setFullYear(endBase.getFullYear() + 1);
 
       const groupData = {
-        groupname: form.name,
+        groupName: form.name,
         description: form.description || null,
-        monthlycontribution: form.monthlyContribution,
-        requiredinterest: form.interestTarget,
-        loaninterestrate: 20, // 20% monthly interest
-        yearstartdate: startBase.toISOString(),
-        yearenddate: endBase.toISOString(),
-        maxmembers: form.maxMembers,
-        isactive: true,
-        isopen: form.isOpen,
+        monthlyContribution: form.monthlyContribution,
+        requiredInterest: form.interestTarget,
+        loanInterestRate: 0.20, // 20% monthly interest
+        yearStartDate: startBase.toISOString().split('T')[0],
+        yearEndDate: endBase.toISOString().split('T')[0],
+        maxMembers: form.maxMembers,
+        isActive: true,
+        isOpen: form.isOpen,
         location: form.location || null,
         signatories: [form.signatory1, form.signatory2],
       };
