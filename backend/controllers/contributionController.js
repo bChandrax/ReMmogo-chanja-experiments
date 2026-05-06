@@ -1,5 +1,55 @@
 const { db } = require("../config/db");
 
+// CREATE CONTRIBUTION (record payment)
+exports.createContribution = async (req, res) => {
+  const { groupid, contributionmonth, amountpaid, status, proofofpayment } = req.body;
+
+  if (!groupid || !contributionmonth) {
+    return res.status(400).json({ error: "groupid and contributionmonth are required" });
+  }
+
+  try {
+    // Get user's member ID
+    const memberCheck = await db.query(
+      "SELECT memberid FROM groupmembers WHERE userid = $1 AND groupid = $2 AND isactive = true",
+      [req.user.id, groupid]
+    );
+
+    if (memberCheck.rows.length === 0) {
+      return res.status(403).json({ error: "You are not a member of this group" });
+    }
+
+    const memberid = memberCheck.rows[0].memberid;
+
+    // Check if contribution already exists for this month
+    const existingCheck = await db.query(
+      "SELECT contributionid, status FROM monthlycontributions WHERE groupid = $1 AND memberid = $2 AND contributionmonth = $3",
+      [groupid, memberid, contributionmonth]
+    );
+
+    if (existingCheck.rows.length > 0) {
+      // Update existing contribution
+      await db.query(
+        `UPDATE monthlycontributions 
+         SET amountpaid = $1, status = $2, proofofpayment = $3, submittedat = NOW(), updatedat = NOW()
+         WHERE contributionid = $4`,
+        [amountpaid || 1000, status || 'submitted', proofofpayment || null, existingCheck.rows[0].contributionid]
+      );
+      res.json({ message: "Payment updated successfully" });
+    } else {
+      // Create new contribution
+      await db.query(
+        `INSERT INTO monthlycontributions (groupid, memberid, contributionmonth, amountdue, amountpaid, status, proofofpayment)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        [groupid, memberid, contributionmonth, 1000, amountpaid || 1000, status || 'submitted', proofofpayment || null]
+      );
+      res.status(201).json({ message: "Payment recorded successfully" });
+    }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 // GET ALL CONTRIBUTIONS FOR A GROUP
 exports.getGroupContributions = async (req, res) => {
   const { groupId } = req.params;
