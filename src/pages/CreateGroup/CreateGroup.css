@@ -338,6 +338,10 @@ body {
     padding: 10px 14px;
     overflow-x: auto;
   }
+
+  .cg-stepper span{
+    display: none;
+  }
   
   .cg-step-label {
     font-size: 10px;
@@ -351,6 +355,7 @@ body {
   
   .cg-form-card {
     padding: 16px;
+    width: 90%;
   }
   
   .cg-review-grid {

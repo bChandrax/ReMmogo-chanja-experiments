@@ -25,16 +25,16 @@ export default function SideBar() {
       </div>
 
       <nav className="navigation">
-        <Link to="/pdash"            className={`nav-item ${location.pathname === "/dashboard"         ? "nav-item-active" : ""}`}><Home size={18} />Dashboard</Link>
-        <Link to="/myGroups"         className={`nav-item ${location.pathname === "/my-groups"         ? "nav-item-active" : ""}`}><GroupIcon size={18} />My Groups</Link>
-        <Link to="/myContributions"  className={`nav-item ${location.pathname === "/my-contributions"  ? "nav-item-active" : ""}`}><Coins size={18} />My Contributions</Link>
-        <Link to="/myLoans"          className={`nav-item ${location.pathname === "/my-loans"          ? "nav-item-active" : ""}`}><Banknote size={18} />My Loans</Link>
-        <Link to="/messages"    className={`nav-item ${location.pathname === "/messages"     ? "nav-item-active" : ""}`}><MessageCircle size={18} />Messages</Link>
+        <Link to="/pdash"            className={`nav-item ${location.pathname === "/dashboard"         ? "nav-item-active" : ""}`}><Home size={18} /> <p>Dashboard</p></Link>
+        <Link to="/myGroups"         className={`nav-item ${location.pathname === "/my-groups"         ? "nav-item-active" : ""}`}><GroupIcon size={18} /><p>My Groups</p></Link>
+        <Link to="/myContributions"  className={`nav-item ${location.pathname === "/my-contributions"  ? "nav-item-active" : ""}`}><Coins size={18} /> <p>My Contributions</p></Link>
+        <Link to="/myLoans"          className={`nav-item ${location.pathname === "/my-loans"          ? "nav-item-active" : ""}`}><Banknote size={18} /> <p>My Loans</p></Link>
+        <Link to="/messages"    className={`nav-item ${location.pathname === "/messages"     ? "nav-item-active" : ""}`}><MessageCircle size={18} /> <p>Messages</p></Link>
 
         <div className="nav-divider" />
 
-        <Link to="/support"  className="nav-item"><Info size={18} /> More Info</Link>
-        <Link to="/settings" className="nav-item"><Settings size={18} /> Settings</Link>
+        <Link to="/support"  className="nav-item"><Info size={18} /> <p>More Info</p></Link>
+        <Link to="/settings" className="nav-item"><Settings size={18} /> <p>Settings</p></Link>
       </nav>
 
       <div className="sidebar-bottom">
@@ -44,7 +44,6 @@ export default function SideBar() {
           </div>
           <div className="user-info">
             <p>{user?.firstName ? `${user.firstName}` : "User"}</p>
-            <span>{user?.email || "user@example.com"}</span>
           </div>
           <button className="sidebar-logout-btn" onClick={handleLogout} title="Logout">
             <LogOut size={16} />
