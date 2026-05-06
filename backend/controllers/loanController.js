@@ -24,10 +24,38 @@ exports.requestLoan = async (req, res) => {
     const interestRate = groupCheck.rows[0].loaninterestrate;
 
     const result = await db.query(
-      `INSERT INTO loans (groupid, borrowermemberid, principalamount, interestrate, outstandingbalance, notes)
-       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+      `INSERT INTO loans (groupid, borrowermemberid, principalamount, interestrate, outstandingbalance, notes, status)
+       VALUES ($1, $2, $3, $4, $5, $6, 'pending_approval') RETURNING *`,
       [groupId, borrowerMemberID, principalAmount, interestRate, principalAmount, notes || null]
     );
+
+    // Create notification for all signatories of the group
+    const signatories = await db.query(
+      `SELECT gm.userid, gm.memberid FROM groupmembers gm
+       WHERE gm.groupid = $1 AND gm.role IN ('signatory', 'admin') AND gm.isactive = true`,
+      [groupId]
+    );
+
+    const userResult = await db.query(
+      "SELECT firstname, lastname FROM users WHERE userid = $1",
+      [req.user.id]
+    );
+    const userName = userResult.rows[0];
+
+    const notificationPromises = signatories.rows.map(async (sig) => {
+      await db.query(
+        `INSERT INTO notifications (userid, type, title, message, relatedid, groupid)
+         VALUES ($1, 'loan_request', 'New Loan Request', $2, $3, $4)`,
+        [
+          sig.userid,
+          `${userName.firstname} ${userName.lastname} requested a loan of P${principalAmount}`,
+          result.rows[0].loanid,
+          groupId
+        ]
+      );
+    });
+
+    await Promise.all(notificationPromises);
 
     res.status(201).json({ message: "Loan request submitted. Awaiting signatory approval.", loan: result.rows[0] });
   } catch (err) {

@@ -7,7 +7,9 @@ const {
   getUnreadCount,
   getPendingMembershipRequests,
   approveMembershipRequest,
-  rejectMembershipRequest
+  rejectMembershipRequest,
+  approveLoanRequest,
+  rejectLoanRequest
 } = require("../controllers/notificationController");
 const { protect } = require("../middleware/authMiddleware");
 
@@ -24,5 +26,9 @@ router.post("/:notificationId/read", markAsRead);
 router.get("/membership-requests/:groupId", getPendingMembershipRequests);
 router.post("/membership-requests/:requestId/approve", approveMembershipRequest);
 router.post("/membership-requests/:requestId/reject", rejectMembershipRequest);
+
+// Loan request approval endpoints (for signatories)
+router.post("/loan-requests/:loanId/approve", approveLoanRequest);
+router.post("/loan-requests/:loanId/reject", rejectLoanRequest);
 
 module.exports = router;

@@ -72,6 +72,8 @@ export const authAPI = {
   register: (data) => apiRequest('/auth/register', { method: 'POST', body: JSON.stringify(data) }),
   login: (email, password) => apiRequest('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }),
   getProfile: () => apiRequest('/auth/profile'),
+  updateProfile: (data) => apiRequest('/auth/profile', { method: 'PUT', body: JSON.stringify(data) }),
+  updatePassword: (data) => apiRequest('/auth/password', { method: 'PUT', body: JSON.stringify(data) }),
 };
 
 // Groups API
@@ -178,6 +180,8 @@ export const notificationsAPI = {
   getPendingRequests: (groupId) => apiRequest(`/notifications/membership-requests/${groupId}`),
   approveRequest: (requestId) => apiRequest(`/notifications/membership-requests/${requestId}/approve`, { method: 'POST' }),
   rejectRequest: (requestId, reason) => apiRequest(`/notifications/membership-requests/${requestId}/reject`, { method: 'POST', body: JSON.stringify({ reason }) }),
+  approveLoan: (loanId) => apiRequest(`/notifications/loan-requests/${loanId}/approve`, { method: 'POST' }),
+  rejectLoan: (loanId, reason) => apiRequest(`/notifications/loan-requests/${loanId}/reject`, { method: 'POST', body: JSON.stringify({ reason }) }),
 };
 
 // Token management

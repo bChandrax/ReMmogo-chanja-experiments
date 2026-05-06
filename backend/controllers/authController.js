@@ -50,44 +50,26 @@ exports.login = async (req, res) => {
   }
 
   try {
-    console.log('🔐 Login attempt for:', email);
-    
     const result = await db.query("SELECT * FROM users WHERE email = $1 AND isactive = true", [email]);
     const user = result.rows[0];
 
     if (!user) {
-      console.log('❌ User not found:', email);
       return res.status(400).json({ error: "Invalid credentials" });
     }
 
-    console.log('✅ User found, checking password...');
     const isMatch = await bcrypt.compare(password, user.passwordhash);
-    
+
     if (!isMatch) {
-      console.log('❌ Password mismatch for:', email);
       return res.status(400).json({ error: "Invalid credentials" });
     }
 
-    console.log('✅ Password matched, generating token...');
-    
-    // Check JWT_SECRET is set
-    if (!process.env.JWT_SECRET) {
-      console.error('❌ JWT_SECRET not configured!');
-      return res.status(500).json({ error: "Server configuration error" });
-    }
-    
     const token = jwt.sign({ id: user.userid, email: user.email }, process.env.JWT_SECRET, { expiresIn: "1d" });
 
-    console.log('✅ Login successful for:', email);
-    
     res.json({
       token,
       user: { id: user.userid, firstName: user.firstname, lastName: user.lastname, email: user.email },
     });
   } catch (err) {
-    console.error('❌ Login error:', err);
-    console.error('Error details:', err.message);
-    console.error('Stack trace:', err.stack);
     res.status(500).json({ error: err.message });
   }
 };
@@ -99,8 +81,60 @@ exports.getProfile = async (req, res) => {
       "SELECT userid, firstname, lastname, email, phonenumber, nationalid, createdat FROM users WHERE userid = $1",
       [req.user.id]
     );
-    if (result.rows.length === 0) return res.status(404).json({ error: "User not found" });
     res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// UPDATE USER PROFILE
+exports.updateProfile = async (req, res) => {
+  const { firstName, lastName, phoneNumber, nationalID } = req.body;
+
+  try {
+    const result = await db.query(
+      `UPDATE users 
+       SET firstname = $1, lastname = $2, phonenumber = $3, nationalid = $4, updatedat = NOW()
+       WHERE userid = $5
+       RETURNING userid, firstname, lastname, email, phonenumber, nationalid`,
+      [firstName || null, lastName || null, phoneNumber || null, nationalID || null, req.user.id]
+    );
+    res.json({ message: "Profile updated successfully", user: result.rows[0] });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// UPDATE USER PASSWORD
+exports.updatePassword = async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({ error: "Current and new password are required" });
+  }
+
+  if (newPassword.length < 6) {
+    return res.status(400).json({ error: "Password must be at least 6 characters" });
+  }
+
+  try {
+    // Verify current password
+    const userResult = await db.query("SELECT passwordhash FROM users WHERE userid = $1", [req.user.id]);
+    const user = userResult.rows[0];
+
+    const isMatch = await bcrypt.compare(currentPassword, user.passwordhash);
+    if (!isMatch) {
+      return res.status(400).json({ error: "Current password is incorrect" });
+    }
+
+    // Hash and update new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await db.query(
+      "UPDATE users SET passwordhash = $1, updatedat = NOW() WHERE userid = $2",
+      [hashedPassword, req.user.id]
+    );
+
+    res.json({ message: "Password updated successfully" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
