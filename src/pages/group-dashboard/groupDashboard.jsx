@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import SideBar from '../../components/sideBar/sideBar';
 import DashboardNavBar from '../../components/NavBar/DashboardNavBar';
+import { useToast } from '../../context/ToastContext';
 import { groupsAPI, membersAPI, contributionsAPI, loansAPI } from '../../services/api';
 import './grp-dash.css';
 
@@ -16,6 +17,7 @@ const TABS = ['Overview', 'Members', 'Approvals', 'Reports'];
 export default function GroupDashboard() {
   const [searchParams] = useSearchParams();
   const groupId = searchParams.get('id');
+  const toast = useToast();
   
   const [tab, setTab] = useState('Overview');
   const [loading, setLoading] = useState(true);
@@ -117,7 +119,7 @@ export default function GroupDashboard() {
   const handleApprove = async (approval) => {
     try {
       let response;
-      
+
       if (approval.type === 'Loan Request') {
         response = await loansAPI.update(approval.loanId, {
           status: 'active',
@@ -129,21 +131,20 @@ export default function GroupDashboard() {
       }
 
       if (response?.success) {
-        alert(`${approval.type} approved successfully`);
-        fetchGroupData(); // Refresh data
+        toast.success(`${approval.type} approved successfully`);
+        fetchGroupData();
       } else {
-        alert(response?.error || 'Failed to approve');
+        toast.error(response?.error || 'Failed to approve');
       }
     } catch (err) {
-      console.error('Error approving:', err);
-      alert('Failed to approve. Please try again.');
+      toast.error('Failed to approve. Please try again.');
     }
   };
 
   const handleReject = async (approval) => {
     try {
       let response;
-      
+
       if (approval.type === 'Loan Request') {
         response = await loansAPI.update(approval.loanId, {
           status: 'rejected',
@@ -155,14 +156,13 @@ export default function GroupDashboard() {
       }
 
       if (response?.success) {
-        alert(`${approval.type} rejected`);
-        fetchGroupData(); // Refresh data
+        toast.success(`${approval.type} rejected`);
+        fetchGroupData();
       } else {
-        alert(response?.error || 'Failed to reject');
+        toast.error(response?.error || 'Failed to reject');
       }
     } catch (err) {
-      console.error('Error rejecting:', err);
-      alert('Failed to reject. Please try again.');
+      toast.error('Failed to reject. Please try again.');
     }
   };
 

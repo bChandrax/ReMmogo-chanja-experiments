@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Bell } from 'lucide-react';
 import './NotificationDropdown.css';
+import { useToast } from '../../context/ToastContext';
 import { notificationsAPI } from '../../services/api';
 
 export default function NotificationDropdown() {
@@ -8,6 +9,7 @@ export default function NotificationDropdown() {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
+  const toast = useToast();
 
   useEffect(() => {
     if (isOpen) {
@@ -54,32 +56,30 @@ export default function NotificationDropdown() {
     try {
       const response = await notificationsAPI.approveRequest(requestId);
       if (response.success) {
-        alert('Member approved successfully');
-        fetchNotifications(); // Refresh notifications
+        toast.success('Member approved successfully');
+        fetchNotifications();
       } else {
-        alert(response.error || 'Failed to approve');
+        toast.error(response.error || 'Failed to approve');
       }
     } catch (err) {
-      console.error('Error approving request:', err);
-      alert('Failed to approve request');
+      toast.error('Failed to approve request');
     }
   };
 
   const handleRejectRequest = async (requestId) => {
     const reason = prompt('Enter reason for rejection (optional):');
-    if (reason === null) return; // User cancelled
+    if (reason === null) return;
 
     try {
       const response = await notificationsAPI.rejectRequest(requestId, reason || undefined);
       if (response.success) {
-        alert('Request rejected');
+        toast.success('Request rejected');
         fetchNotifications();
       } else {
-        alert(response.error || 'Failed to reject');
+        toast.error(response.error || 'Failed to reject');
       }
     } catch (err) {
-      console.error('Error rejecting request:', err);
-      alert('Failed to reject request');
+      toast.error('Failed to reject request');
     }
   };
 
@@ -87,14 +87,13 @@ export default function NotificationDropdown() {
     try {
       const response = await notificationsAPI.approveLoan(loanId);
       if (response.success) {
-        alert('Loan approved and disbursed');
+        toast.success('Loan approved and disbursed');
         fetchNotifications();
       } else {
-        alert(response.error || 'Failed to approve loan');
+        toast.error(response.error || 'Failed to approve loan');
       }
     } catch (err) {
-      console.error('Error approving loan:', err);
-      alert('Failed to approve loan');
+      toast.error('Failed to approve loan');
     }
   };
 
@@ -105,14 +104,13 @@ export default function NotificationDropdown() {
     try {
       const response = await notificationsAPI.rejectLoan(loanId, reason || undefined);
       if (response.success) {
-        alert('Loan request rejected');
+        toast.success('Loan request rejected');
         fetchNotifications();
       } else {
-        alert(response.error || 'Failed to reject loan');
+        toast.error(response.error || 'Failed to reject loan');
       }
     } catch (err) {
-      console.error('Error rejecting loan:', err);
-      alert('Failed to reject loan');
+      toast.error('Failed to reject loan');
     }
   };
 

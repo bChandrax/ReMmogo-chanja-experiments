@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { HelpCircle, Mail, Phone, MessageCircle, ChevronDown, Book, FileText, Video, Users, Search, ExternalLink, Send } from "lucide-react";
+import { useToast } from "../../context/ToastContext";
 import SideBar from "../../components/sideBar/sideBar";
 import DashboardNavBar from "../../components/NavBar/DashboardNavBar";
 import "./SupportPage.css";
@@ -126,10 +127,11 @@ export default function SupportPage() {
     subject: "",
     message: ""
   });
+  const toast = useToast();
 
   const handleContactSubmit = (e) => {
     e.preventDefault();
-    alert("Thank you for your message. We'll get back to you soon!");
+    toast.success("Thank you for your message. We'll get back to you soon!");
     setContactForm({ subject: "", message: "" });
   };
 

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import SideBar from '../../components/sideBar/sideBar';
+import { useToast } from '../../context/ToastContext';
 import './myGroups.css';
 import DashboardNavBar from '../../components/NavBar/DashboardNavBar';
 import GroupCard from '../../components/GroupCard/GroupCard';
@@ -12,6 +13,7 @@ export default function MyGroups() {
   const [error, setError] = useState(null);
   const [leaveGroup, setLeaveGroup] = useState(null);
   const [leaving, setLeaving] = useState(false);
+  const toast = useToast();
 
   useEffect(() => {
     fetchMyGroups();
@@ -60,39 +62,34 @@ export default function MyGroups() {
     try {
       setLeaving(true);
 
-      // Get current user's member ID in this group
       const token = localStorage.getItem('token');
       if (!token) {
-        alert('Please login to leave a group');
+        toast.error('Please login to leave a group');
         window.location.href = '/login';
         return;
       }
 
-      // Decode token to get user ID
       const payload = JSON.parse(atob(token.split('.')[1]));
       const userId = payload.id || payload.userid;
 
-      // First, get the member ID for this user in this group
       const membersRes = await membersAPI.getAll(leaveGroup.groupid);
       const member = membersRes.data?.find(m => m.userid === userId);
 
       if (member && member.memberid) {
-        // Remove member from group
         const response = await membersAPI.delete(leaveGroup.groupid, member.memberid);
 
         if (response.success) {
-          alert('You have left the group successfully');
+          toast.success('You have left the group successfully');
           setLeaveGroup(null);
-          fetchMyGroups(); // Refresh the list
+          fetchMyGroups();
         } else {
-          alert(response.error || 'Failed to leave group');
+          toast.error(response.error || 'Failed to leave group');
         }
       } else {
-        alert('Could not find your membership in this group');
+        toast.error('Could not find your membership in this group');
       }
     } catch (err) {
-      console.error('Error leaving group:', err);
-      alert('Failed to leave group. Please try again.');
+      toast.error('Failed to leave group. Please try again.');
     } finally {
       setLeaving(false);
     }
