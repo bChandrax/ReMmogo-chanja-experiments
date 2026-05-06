@@ -70,11 +70,9 @@ export default function MyLoans() {
       setRequesting(true);
 
       const response = await loansAPI.create({
-        groupid: reqForm.groupid,
-        principalamount: parseFloat(reqForm.amount),
-        purpose: reqForm.purpose || null,
-        status: 'pending',
-        interestrate: 20,
+        groupId: reqForm.groupid,
+        principalAmount: parseFloat(reqForm.amount),
+        notes: reqForm.purpose || null,
       });
 
       if (response.success) {
