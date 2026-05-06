@@ -9,7 +9,6 @@ export default function DashboardNavBar() {
     <div className="topbar">
       <div className="topbar-left">
         <h1>Welcome back, {user?.firstName || "User"}</h1>
-        <p>Here's a real-time snapshot of your financial health across accounts and obligations</p>
       </div>
       
       <div className="topbar-right">
