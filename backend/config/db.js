@@ -2,10 +2,8 @@ const { Pool } = require("pg");
 require("dotenv").config();
 
 // Determine if we're running in production (e.g., on Render)
-const isProduction = process.env.NODE_ENV === "production" && 
-  (process.env.DATABASE_URL?.includes('render.com') || 
-   process.env.DATABASE_URL?.includes('neon.tech') ||
-   process.env.NODE_ENV === 'production');
+const isProduction = process.env.NODE_ENV === "production" ||
+  (process.env.DATABASE_URL && process.env.DATABASE_URL.includes('render.com'));
 
 // Database configuration
 // Try to use individual DB variables if DATABASE_URL is not set or is a placeholder
@@ -28,10 +26,10 @@ if (process.env.DATABASE_URL && !process.env.DATABASE_URL.includes('YOUR_PASSWOR
     ssl: isProduction ? { rejectUnauthorized: false } : false,
   };
 } else {
-  // Default to localhost with DATABASE_URL format
+  // Default to Render production database
   poolConfig = {
-    connectionString: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/remmogo',
-    ssl: false,
+    connectionString: 'postgresql://remmogo_user:UF3ZQitedyJDwmVkL2ZLPrK0Znwp9KKH@dpg-d7t40p8sfn5c73aiq7j0-a/remmogo',
+    ssl: { rejectUnauthorized: false },
   };
 }
 
@@ -41,8 +39,8 @@ const connectDB = async () => {
   try {
     await pool.query("SELECT 1");
     console.log("✅ Connected to PostgreSQL successfully");
-    console.log(`📊 Database: ${process.env.DB_DATABASE || 'remmogo'}`);
-    console.log(` Host: ${process.env.DB_HOST || 'localhost'}:${process.env.DB_PORT || 5432}`);
+    console.log(`📊 Database: remmogo`);
+    console.log(`📊 Host: dpg-d7t40p8sfn5c73aiq7j0-a`);
   } catch (err) {
     console.error("❌ DB connection failed:", err.message);
     console.error("💡 Check your .env file and ensure PostgreSQL is running");
