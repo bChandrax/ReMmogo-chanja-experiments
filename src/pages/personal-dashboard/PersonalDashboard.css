@@ -16,7 +16,6 @@ body{
 .dash {
   display: flex;
   height: 100vh;
-  min-height: 600px;
   background: #f5f4ef;
 }
 
@@ -47,6 +46,7 @@ body{
   background: #fff;
   border: 0.5px solid #e0ddd5;
   margin: 5px;
+  min-width: 440px;
   border-radius: 12px;
   padding: 14px;
   animation: fadeInUp 0.5s ease-out;
@@ -370,123 +370,13 @@ body{
    Responsive Design - Mobile First
    ================================ */
 
-/* Tablet and below */
-@media (max-width: 1024px) {
-  .content {
-    grid-template-columns: 1fr;
-  }
-  
-  .bills-grid {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-
-/* Mobile - phones */
-@media (max-width: 768px) {
-  .dash {
+@media (max-width: 768px){
+  .content{
+    display: flex;
     flex-direction: column;
   }
-  
-  .main {
-    width: 100%;
-  }
-  
-  .content {
-    padding: 0;
-  }
-  
-  .panel {
-    margin: 5px 0;
-    border-radius: 0;
-    border-left: none;
-    border-right: none;
-  }
-  
-  .panel:first-child {
-    border-top: none;
-  }
-  
-  .panel:last-child {
-    border-bottom: none;
-  }
-  
-  .bills-grid {
-    grid-template-columns: 1fr;
-    gap: 10px;
-  }
-  
-  .bill-card {
-    padding: 12px;
-  }
-  
-  .panel-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-  }
-  
-  .see-all {
-    font-size: 12px;
-  }
-  
-  .gauge-wrap {
-    height: 150px;
-  }
-  
-  .alloc-bar {
-    height: 10px;
-  }
-  
-  .bar-legend {
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-  
-  .alloc-table {
-    font-size: 10px;
-  }
-  
-  .txn-row {
-    padding: 10px 0;
-  }
-  
-  .txn-icon {
-    width: 28px;
-    height: 28px;
-  }
-  
-  .txn-name {
-    font-size: 11px;
-  }
-  
-  .txn-cat {
-    font-size: 9px;
-  }
-  
-  .txn-amount {
-    font-size: 11px;
-  }
-}
 
-/* Small phones */
-@media (max-width: 480px) {
-  body {
-    font-size: 12px;
-  }
-  
-  .bill-label {
-    font-size: 9px;
-  }
-  
-  .bill-amount {
-    font-size: 13px;
-  }
-  
-  .gauge-label {
-    bottom: 5px;
-  }
-  
-  .gauge-amount {
-    font-size: 14px;
+  .panel{
+    height: 400px;
   }
 }

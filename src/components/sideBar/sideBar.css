@@ -159,4 +159,8 @@
   .sidebar-bottom{
     display: block;
   }
+
+  .logo-icon{
+    aspect-ratio: 1/1;
+  }
 }
