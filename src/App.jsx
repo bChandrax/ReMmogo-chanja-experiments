@@ -25,34 +25,34 @@ function App() {
         
         {/* Protected Routes */}
         <Route path="/pdash" element={
-          <PersonalDashboard />
+          <ProtectedRoute><PersonalDashboard /></ProtectedRoute>
         } />
         <Route path="/myGroups" element={
-          <MyGroups />
+          <ProtectedRoute><MyGroups /></ProtectedRoute>
         } />
         <Route path="/explore" element={
-          <ExplorePage />
+          <ProtectedRoute><ExplorePage /></ProtectedRoute>
         } />
         <Route path="/myContributions" element={
-          <MyContributions />
+          <ProtectedRoute><MyContributions /></ProtectedRoute>
         } />
         <Route path="/myLoans" element={
-          <MyLoans />
+          <ProtectedRoute><MyLoans /></ProtectedRoute>
         } />
         <Route path="/createGroup" element={
-          <CreateGroup />
+          <ProtectedRoute><CreateGroup /></ProtectedRoute>
         } />
         <Route path="/GrpDash" element={
-          <GroupDashboard />
+          <ProtectedRoute><GroupDashboard /></ProtectedRoute>
         } />
         <Route path="/messages" element={
-          <MessagesPage />
+          <ProtectedRoute><MessagesPage /></ProtectedRoute>
         } />
         <Route path="/settings" element={
-          <SettingsPage />
+          <ProtectedRoute><SettingsPage /></ProtectedRoute>
         } />
         <Route path="/support" element={
-          <SupportPage />
+          <ProtectedRoute><SupportPage /></ProtectedRoute>
         } />
       </Routes>
     </AuthProvider>
