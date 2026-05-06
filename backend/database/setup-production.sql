@@ -1,33 +1,15 @@
--- Re-Mmogo Database Setup Script
--- Run this on your PostgreSQL database after creating the 'remmogo' database
+-- Re-Mmogo Production Database Setup
+-- Run this on your Render PostgreSQL database
 
--- Enable UUID extension (if not already enabled)
+-- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
--- Drop existing tables/views if they exist (for clean setup)
-DROP VIEW IF EXISTS vw_pending_membership_requests CASCADE;
-DROP VIEW IF EXISTS vw_year_end_report CASCADE;
-DROP VIEW IF EXISTS vw_member_balances CASCADE;
-DROP TABLE IF EXISTS membershiprequests CASCADE;
-DROP TABLE IF EXISTS notifications CASCADE;
-DROP TABLE IF EXISTS repaymentapprovals CASCADE;
-DROP TABLE IF EXISTS loanrepayments CASCADE;
-DROP TABLE IF EXISTS loanapprovals CASCADE;
-DROP TABLE IF EXISTS loaninterestschedule CASCADE;
-DROP TABLE IF EXISTS loans CASCADE;
-DROP TABLE IF EXISTS contributionapprovals CASCADE;
-DROP TABLE IF EXISTS monthlycontributions CASCADE;
-DROP TABLE IF EXISTS groupsignatories CASCADE;
-DROP TABLE IF EXISTS groupmembers CASCADE;
-DROP TABLE IF EXISTS motshelogroups CASCADE;
-DROP TABLE IF EXISTS users CASCADE;
 
 -- ============================================================================
 -- CORE TABLES
 -- ============================================================================
 
 -- Users table
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
     userid SERIAL PRIMARY KEY,
     firstname VARCHAR(100) NOT NULL,
     lastname VARCHAR(100) NOT NULL,
@@ -41,7 +23,7 @@ CREATE TABLE users (
 );
 
 -- Motshelo Groups table
-CREATE TABLE motshelogroups (
+CREATE TABLE IF NOT EXISTS motshelogroups (
     groupid SERIAL PRIMARY KEY,
     groupname VARCHAR(255) NOT NULL,
     description TEXT,
@@ -59,7 +41,7 @@ CREATE TABLE motshelogroups (
 );
 
 -- Group Members table
-CREATE TABLE groupmembers (
+CREATE TABLE IF NOT EXISTS groupmembers (
     memberid SERIAL PRIMARY KEY,
     groupid INTEGER REFERENCES motshelogroups(groupid) ON DELETE CASCADE,
     userid INTEGER REFERENCES users(userid) ON DELETE CASCADE,
@@ -71,7 +53,7 @@ CREATE TABLE groupmembers (
 );
 
 -- Group Signatories table
-CREATE TABLE groupsignatories (
+CREATE TABLE IF NOT EXISTS groupsignatories (
     signatoryid SERIAL PRIMARY KEY,
     groupid INTEGER REFERENCES motshelogroups(groupid) ON DELETE CASCADE,
     memberid INTEGER REFERENCES groupmembers(memberid) ON DELETE CASCADE,
@@ -81,7 +63,7 @@ CREATE TABLE groupsignatories (
 );
 
 -- Monthly Contributions table
-CREATE TABLE monthlycontributions (
+CREATE TABLE IF NOT EXISTS monthlycontributions (
     contributionid SERIAL PRIMARY KEY,
     groupid INTEGER REFERENCES motshelogroups(groupid) ON DELETE CASCADE,
     memberid INTEGER REFERENCES groupmembers(memberid) ON DELETE CASCADE,
@@ -96,7 +78,7 @@ CREATE TABLE monthlycontributions (
 );
 
 -- Contribution Approvals table
-CREATE TABLE contributionapprovals (
+CREATE TABLE IF NOT EXISTS contributionapprovals (
     approvalid SERIAL PRIMARY KEY,
     contributionid INTEGER REFERENCES monthlycontributions(contributionid) ON DELETE CASCADE,
     signatorymemberid INTEGER REFERENCES groupmembers(memberid) ON DELETE CASCADE,
@@ -107,7 +89,7 @@ CREATE TABLE contributionapprovals (
 );
 
 -- Loans table
-CREATE TABLE loans (
+CREATE TABLE IF NOT EXISTS loans (
     loanid SERIAL PRIMARY KEY,
     groupid INTEGER REFERENCES motshelogroups(groupid) ON DELETE CASCADE,
     borrowermemberid INTEGER REFERENCES groupmembers(memberid) ON DELETE CASCADE,
@@ -124,7 +106,7 @@ CREATE TABLE loans (
 );
 
 -- Loan Approvals table
-CREATE TABLE loanapprovals (
+CREATE TABLE IF NOT EXISTS loanapprovals (
     loanapprovalid SERIAL PRIMARY KEY,
     loanid INTEGER REFERENCES loans(loanid) ON DELETE CASCADE,
     signatorymemberid INTEGER REFERENCES groupmembers(memberid) ON DELETE CASCADE,
@@ -135,7 +117,7 @@ CREATE TABLE loanapprovals (
 );
 
 -- Loan Repayments table
-CREATE TABLE loanrepayments (
+CREATE TABLE IF NOT EXISTS loanrepayments (
     repaymentid SERIAL PRIMARY KEY,
     loanid INTEGER REFERENCES loans(loanid) ON DELETE CASCADE,
     memberid INTEGER REFERENCES groupmembers(memberid) ON DELETE CASCADE,
@@ -148,7 +130,7 @@ CREATE TABLE loanrepayments (
 );
 
 -- Repayment Approvals table
-CREATE TABLE repaymentapprovals (
+CREATE TABLE IF NOT EXISTS repaymentapprovals (
     repayapprovalid SERIAL PRIMARY KEY,
     repaymentid INTEGER REFERENCES loanrepayments(repaymentid) ON DELETE CASCADE,
     signatorymemberid INTEGER REFERENCES groupmembers(memberid) ON DELETE CASCADE,
@@ -159,7 +141,7 @@ CREATE TABLE repaymentapprovals (
 );
 
 -- Loan Interest Schedule table
-CREATE TABLE loaninterestschedule (
+CREATE TABLE IF NOT EXISTS loaninterestschedule (
     scheduleid SERIAL PRIMARY KEY,
     loanid INTEGER REFERENCES loans(loanid) ON DELETE CASCADE,
     periodmonth DATE NOT NULL,
@@ -171,17 +153,50 @@ CREATE TABLE loaninterestschedule (
     UNIQUE(loanid, periodmonth)
 );
 
--- ============================================================================
--- MEMBERSHIP REQUESTS & NOTIFICATIONS TABLES
--- ============================================================================
+-- Conversations table (for messaging)
+CREATE TABLE IF NOT EXISTS conversations (
+    conversationid SERIAL PRIMARY KEY,
+    groupid INTEGER REFERENCES motshelogroups(groupid) ON DELETE CASCADE,
+    createdby INTEGER REFERENCES users(userid),
+    createdat TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
--- Membership Requests table (for join requests)
-CREATE TABLE membershiprequests (
+-- Conversation Members table
+CREATE TABLE IF NOT EXISTS conversation_members (
+    memberid SERIAL PRIMARY KEY,
+    conversationid INTEGER REFERENCES conversations(conversationid) ON DELETE CASCADE,
+    userid INTEGER REFERENCES users(userid) ON DELETE CASCADE,
+    joinedat TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(conversationid, userid)
+);
+
+-- Messages table
+CREATE TABLE IF NOT EXISTS messages (
+    messageid SERIAL PRIMARY KEY,
+    conversationid INTEGER REFERENCES conversations(conversationid) ON DELETE CASCADE,
+    senderid INTEGER REFERENCES users(userid),
+    content TEXT NOT NULL,
+    messagetype VARCHAR(50) DEFAULT 'text',
+    createdat TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    editedat TIMESTAMP
+);
+
+-- Message Reads table
+CREATE TABLE IF NOT EXISTS message_reads (
+    readid SERIAL PRIMARY KEY,
+    messageid INTEGER REFERENCES messages(messageid) ON DELETE CASCADE,
+    userid INTEGER REFERENCES users(userid) ON DELETE CASCADE,
+    readat TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(messageid, userid)
+);
+
+-- Membership Requests table
+CREATE TABLE IF NOT EXISTS membershiprequests (
     requestid SERIAL PRIMARY KEY,
     groupid INTEGER REFERENCES motshelogroups(groupid) ON DELETE CASCADE,
     userid INTEGER REFERENCES users(userid) ON DELETE CASCADE,
     message TEXT,
-    status VARCHAR(50) DEFAULT 'pending', -- pending, approved, rejected
+    status VARCHAR(50) DEFAULT 'pending',
     requestedat TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     reviewedat TIMESTAMP,
     reviewedby INTEGER REFERENCES users(userid),
@@ -190,13 +205,13 @@ CREATE TABLE membershiprequests (
 );
 
 -- Notifications table
-CREATE TABLE notifications (
+CREATE TABLE IF NOT EXISTS notifications (
     notificationid SERIAL PRIMARY KEY,
     userid INTEGER REFERENCES users(userid) ON DELETE CASCADE,
-    type VARCHAR(50) NOT NULL, -- join_request, loan_request, contribution_approved, etc.
+    type VARCHAR(50) NOT NULL,
     title VARCHAR(255) NOT NULL,
     message TEXT NOT NULL,
-    relatedid INTEGER, -- ID of the related entity (request, loan, contribution, etc.)
+    relatedid INTEGER,
     groupid INTEGER REFERENCES motshelogroups(groupid) ON DELETE CASCADE,
     isread BOOLEAN DEFAULT false,
     createdat TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -204,12 +219,31 @@ CREATE TABLE notifications (
 );
 
 -- ============================================================================
+-- INDEXES FOR PERFORMANCE
+-- ============================================================================
+
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_groupmembers_groupid ON groupmembers(groupid);
+CREATE INDEX IF NOT EXISTS idx_groupmembers_userid ON groupmembers(userid);
+CREATE INDEX IF NOT EXISTS idx_monthlycontributions_groupid ON monthlycontributions(groupid);
+CREATE INDEX IF NOT EXISTS idx_monthlycontributions_memberid ON monthlycontributions(memberid);
+CREATE INDEX IF NOT EXISTS idx_loans_groupid ON loans(groupid);
+CREATE INDEX IF NOT EXISTS idx_loans_borrower ON loans(borrowermemberid);
+CREATE INDEX IF NOT EXISTS idx_loans_status ON loans(status);
+CREATE INDEX IF NOT EXISTS idx_membershiprequests_groupid ON membershiprequests(groupid);
+CREATE INDEX IF NOT EXISTS idx_membershiprequests_userid ON membershiprequests(userid);
+CREATE INDEX IF NOT EXISTS idx_membershiprequests_status ON membershiprequests(status);
+CREATE INDEX IF NOT EXISTS idx_notifications_userid ON notifications(userid);
+CREATE INDEX IF NOT EXISTS idx_notifications_type ON notifications(type);
+CREATE INDEX IF NOT EXISTS idx_notifications_read ON notifications(userid, isread);
+
+-- ============================================================================
 -- VIEWS
 -- ============================================================================
 
 -- Member Balances View
-CREATE VIEW vw_member_balances AS
-SELECT 
+CREATE OR REPLACE VIEW vw_member_balances AS
+SELECT
     gm.memberid,
     gm.groupid,
     gm.userid,
@@ -238,8 +272,8 @@ WHERE gm.isactive = true
 GROUP BY gm.memberid, gm.groupid, gm.userid, u.firstname, u.lastname, u.email, gm.role;
 
 -- Year End Report View
-CREATE VIEW vw_year_end_report AS
-SELECT 
+CREATE OR REPLACE VIEW vw_year_end_report AS
+SELECT
     gm.memberid,
     u.firstname,
     u.lastname,
@@ -259,7 +293,7 @@ SELECT
         FROM loans l
         WHERE l.borrowermemberid = gm.memberid
     ), 0) AS loansrepaid,
-    (COALESCE(SUM(mc.amountpaid), 0) + 
+    (COALESCE(SUM(mc.amountpaid), 0) +
      COALESCE((SELECT SUM(mc2.amountdue * 0.15) FROM monthlycontributions mc2 WHERE mc2.memberid = gm.memberid AND mc2.status = 'paid'), 0) -
      COALESCE((SELECT SUM(l.outstandingbalance) FROM loans l WHERE l.borrowermemberid = gm.memberid AND l.status = 'active'), 0)
     ) AS estimatedpayout
@@ -270,189 +304,7 @@ LEFT JOIN monthlycontributions mc ON mc.memberid = gm.memberid AND mc.contributi
 WHERE gm.isactive = true
 GROUP BY gm.memberid, gm.groupid, gm.userid, u.firstname, u.lastname, mg.groupname, mg.yearstartdate, mg.yearenddate;
 
--- ============================================================================
--- STORED PROCEDURES / FUNCTIONS
--- ============================================================================
-
--- Function to generate monthly contributions
-CREATE OR REPLACE FUNCTION sp_generate_monthly_contributions(
-    p_groupid INTEGER,
-    p_periodmonth VARCHAR(20)
-) RETURNS VOID AS $$
-BEGIN
-    INSERT INTO monthlycontributions (groupid, memberid, contributionmonth, amountdue, status)
-    SELECT 
-        p_groupid,
-        gm.memberid,
-        p_periodmonth,
-        mg.monthlycontribution,
-        'not_paid'
-    FROM groupmembers gm
-    CROSS JOIN motshelogroups mg
-    WHERE gm.groupid = p_groupid 
-      AND gm.isactive = true
-      AND mg.groupid = p_groupid
-      AND NOT EXISTS (
-          SELECT 1 FROM monthlycontributions mc 
-          WHERE mc.groupid = p_groupid 
-            AND mc.memberid = gm.memberid 
-            AND mc.contributionmonth = p_periodmonth
-      )
-    ON CONFLICT (groupid, memberid, contributionmonth) DO NOTHING;
-END;
-$$ LANGUAGE plpgsql;
-
--- Function to apply monthly loan interest
-CREATE OR REPLACE FUNCTION sp_apply_monthly_loan_interest(
-    p_groupid INTEGER,
-    p_periodmonth DATE
-) RETURNS VOID AS $$
-BEGIN
-    INSERT INTO loaninterestschedule (loanid, periodmonth, openingbalance, interestcharged, closingbalance)
-    SELECT 
-        l.loanid,
-        p_periodmonth,
-        l.outstandingbalance,
-        l.outstandingbalance * l.interestrate,
-        l.outstandingbalance + (l.outstandingbalance * l.interestrate)
-    FROM loans l
-    WHERE l.groupid = p_groupid 
-      AND l.status = 'active'
-      AND NOT EXISTS (
-          SELECT 1 FROM loaninterestschedule lis 
-          WHERE lis.loanid = l.loanid AND lis.periodmonth = p_periodmonth
-      );
-    
-    UPDATE loans l
-    SET outstandingbalance = outstandingbalance + (outstandingbalance * l.interestrate),
-        updatedat = CURRENT_TIMESTAMP
-    WHERE l.groupid = p_groupid 
-      AND l.status = 'active';
-END;
-$$ LANGUAGE plpgsql;
-
--- ============================================================================
--- INDEXES FOR PERFORMANCE
--- ============================================================================
-
-CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_groupmembers_groupid ON groupmembers(groupid);
-CREATE INDEX idx_groupmembers_userid ON groupmembers(userid);
-CREATE INDEX idx_monthlycontributions_groupid ON monthlycontributions(groupid);
-CREATE INDEX idx_monthlycontributions_memberid ON monthlycontributions(memberid);
-CREATE INDEX idx_loans_groupid ON loans(groupid);
-CREATE INDEX idx_loans_borrower ON loans(borrowermemberid);
-CREATE INDEX idx_loans_status ON loans(status);
-
--- Indexes for membership requests
-CREATE INDEX idx_membershiprequests_groupid ON membershiprequests(groupid);
-CREATE INDEX idx_membershiprequests_userid ON membershiprequests(userid);
-CREATE INDEX idx_membershiprequests_status ON membershiprequests(status);
-
--- Indexes for notifications
-CREATE INDEX idx_notifications_userid ON notifications(userid);
-CREATE INDEX idx_notifications_type ON notifications(type);
-CREATE INDEX idx_notifications_read ON notifications(userid, isread);
-
--- ============================================================================
--- STORED PROCEDURES FOR MEMBERSHIP REQUESTS
--- ============================================================================
-
--- Function to approve membership request
-CREATE OR REPLACE FUNCTION sp_approve_membership_request(
-    p_requestid INTEGER,
-    p_approverid INTEGER
-) RETURNS VOID AS $$
-DECLARE
-    v_groupid INTEGER;
-    v_userid INTEGER;
-    v_memberid INTEGER;
-BEGIN
-    -- Get request details
-    SELECT groupid, userid INTO v_groupid, v_userid
-    FROM membershiprequests
-    WHERE requestid = p_requestid AND status = 'pending';
-
-    IF NOT FOUND THEN
-        RAISE EXCEPTION 'Request not found or already processed';
-    END IF;
-
-    -- Add user as member of the group
-    INSERT INTO groupmembers (groupid, userid, role, joindate, isactive)
-    VALUES (v_groupid, v_userid, 'member', CURRENT_DATE, true)
-    ON CONFLICT (groupid, userid) DO UPDATE SET isactive = true, joindate = CURRENT_DATE
-    RETURNING memberid INTO v_memberid;
-
-    -- Update request status
-    UPDATE membershiprequests
-    SET status = 'approved',
-        reviewedat = NOW(),
-        reviewedby = p_approverid,
-        reviewnote = 'Approved by signatory'
-    WHERE requestid = p_requestid;
-
-    -- Create notification for the approved user
-    INSERT INTO notifications (userid, type, title, message, relatedid, groupid)
-    VALUES (
-        v_userid,
-        'membership_approved',
-        'Join Request Approved',
-        'Your request to join the group has been approved!',
-        p_requestid,
-        v_groupid
-    );
-
-    -- Create notification in group chat
-    INSERT INTO conversations (groupid, memberid, createdat)
-    VALUES (v_groupid, v_memberid, NOW())
-    ON CONFLICT (groupid, memberid) DO NOTHING;
-
-END;
-$$ LANGUAGE plpgsql;
-
--- Function to reject membership request
-CREATE OR REPLACE FUNCTION sp_reject_membership_request(
-    p_requestid INTEGER,
-    p_approverid INTEGER,
-    p_reason TEXT DEFAULT NULL
-) RETURNS VOID AS $$
-BEGIN
-    -- Update request status
-    UPDATE membershiprequests
-    SET status = 'rejected',
-        reviewedat = NOW(),
-        reviewedby = p_approverid,
-        reviewnote = p_reason
-    WHERE requestid = p_requestid AND status = 'pending';
-
-    IF NOT FOUND THEN
-        RAISE EXCEPTION 'Request not found or already processed';
-    END IF;
-
-    -- Get user info for notification
-    DECLARE
-        v_userid INTEGER;
-        v_groupid INTEGER;
-    BEGIN
-        SELECT userid, groupid INTO v_userid, v_groupid
-        FROM membershiprequests
-        WHERE requestid = p_requestid;
-
-        -- Create notification for the rejected user
-        INSERT INTO notifications (userid, type, title, message, relatedid, groupid)
-        VALUES (
-            v_userid,
-            'membership_rejected',
-            'Join Request Update',
-            COALESCE(p_reason, 'Your request to join the group was not approved.'),
-            p_requestid,
-            v_groupid
-        );
-    END;
-END;
-$$ LANGUAGE plpgsql;
-
--- View for pending membership requests
+-- Pending Membership Requests View
 CREATE OR REPLACE VIEW vw_pending_membership_requests AS
 SELECT
     mr.requestid,
@@ -472,53 +324,178 @@ INNER JOIN users u ON u.userid = mr.userid
 WHERE mr.status = 'pending'
 ORDER BY mr.requestedat DESC;
 
--- ============================================================================
--- SEED DATA (FOR TESTING)
--- ============================================================================
+-- User Conversations View
+CREATE OR REPLACE VIEW vw_user_conversations AS
+SELECT
+    c.conversationid,
+    c.groupid,
+    c.createdby,
+    c.createdat,
+    cm.userid,
+    mg.groupname
+FROM conversations c
+INNER JOIN conversation_members cm ON cm.conversationid = c.conversationid
+INNER JOIN motshelogroups mg ON mg.groupid = c.groupid;
 
--- Insert test users (password: Password123 for all)
-INSERT INTO users (firstname, lastname, email, phonenumber, passwordhash, nationalid) VALUES
-('Kabo', 'Moeng', 'kabo.moeng@example.com', '+267 71234567', '$2b$10$rH0zXGJQ.yN7N8P5xKqQ8.vWZJ9K8N5xKqQ8.vWZJ9K8N5xKqQ8.vW', '123456789'),
-('Selepe', 'Tau', 'selepe.tau@example.com', '+267 72345678', '$2b$10$rH0zXGJQ.yN7N8P5xKqQ8.vWZJ9K8N5xKqQ8.vWZJ9K8N5xKqQ8.vW', '234567890'),
-('Neo', 'Sithole', 'neo.sithole@example.com', '+267 73456789', '$2b$10$rH0zXGJQ.yN7N8P5xKqQ8.vWZJ9K8N5xKqQ8.vWZJ9K8N5xKqQ8.vW', '345678901'),
-('Thabo', 'Kerileng', 'thabo.kerileng@example.com', '+267 74567890', '$2b$10$rH0zXGJQ.yN7N8P5xKqQ8.vWZJ9K8N5xKqQ8.vWZJ9K8N5xKqQ8.vW', '456789012'),
-('Lorato', 'Dube', 'lorato.dube@example.com', '+267 75678901', '$2b$10$rH0zXGJQ.yN7N8P5xKqQ8.vWZJ9K8N5xKqQ8.vWZJ9K8N5xKqQ8.vW', '567890123');
-
--- Insert test group
-INSERT INTO motshelogroups (groupname, description, monthlycontribution, requiredinterest, loaninterestrate, yearstartdate, yearenddate, isactive, isopen, maxmembers) VALUES
-('Kopano Savings Group', 'A community savings group focused on mutual financial support', 1000.00, 5000.00, 0.20, '2026-01-01', '2026-12-31', true, true, 12);
-
--- Make first two users signatories/admins
-INSERT INTO groupmembers (groupid, userid, role, joindate) VALUES
-(1, 1, 'admin', CURRENT_DATE),
-(1, 2, 'signatory', CURRENT_DATE),
-(1, 3, 'member', CURRENT_DATE),
-(1, 4, 'member', CURRENT_DATE),
-(1, 5, 'member', CURRENT_DATE);
-
--- Add signatories
-INSERT INTO groupsignatories (groupid, memberid) VALUES
-(1, 1),
-(1, 2);
-
--- Generate test contributions for Jan-Mar 2026
-SELECT sp_generate_monthly_contributions(1, 'Jan 2026');
-SELECT sp_generate_monthly_contributions(1, 'Feb 2026');
-SELECT sp_generate_monthly_contributions(1, 'Mar 2026');
-
--- Mark some contributions as paid
-UPDATE monthlycontributions 
-SET amountpaid = 1000, status = 'paid', updatedat = CURRENT_TIMESTAMP
-WHERE contributionmonth IN ('Jan 2026', 'Feb 2026') AND memberid IN (1, 2, 3);
+-- Message Details View
+CREATE OR REPLACE VIEW vw_message_details AS
+SELECT
+    m.messageid,
+    m.conversationid,
+    m.senderid,
+    m.content,
+    m.messagetype,
+    m.createdat,
+    u.firstname || ' ' || u.lastname AS sendername,
+    mg.groupname
+FROM messages m
+INNER JOIN users u ON u.userid = m.senderid
+INNER JOIN conversations c ON c.conversationid = m.conversationid
+INNER JOIN motshelogroups mg ON mg.groupid = c.groupid;
 
 -- ============================================================================
--- VERIFICATION QUERIES
+-- STORED PROCEDURES
 -- ============================================================================
 
--- Check tables created
--- SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_name;
+-- Function to generate monthly contributions
+CREATE OR REPLACE FUNCTION sp_generate_monthly_contributions(
+    p_groupid INTEGER,
+    p_periodmonth VARCHAR(20)
+) RETURNS VOID AS $$
+BEGIN
+    INSERT INTO monthlycontributions (groupid, memberid, contributionmonth, amountdue, status)
+    SELECT
+        p_groupid,
+        gm.memberid,
+        p_periodmonth,
+        mg.monthlycontribution,
+        'not_paid'
+    FROM groupmembers gm
+    CROSS JOIN motshelogroups mg
+    WHERE gm.groupid = p_groupid
+      AND gm.isactive = true
+      AND mg.groupid = p_groupid
+      AND NOT EXISTS (
+          SELECT 1 FROM monthlycontributions mc
+          WHERE mc.groupid = p_groupid
+            AND mc.memberid = gm.memberid
+            AND mc.contributionmonth = p_periodmonth
+      )
+    ON CONFLICT (groupid, memberid, contributionmonth) DO NOTHING;
+END;
+$$ LANGUAGE plpgsql;
 
--- Check seed data
--- SELECT COUNT(*) FROM users;
--- SELECT COUNT(*) FROM motshelogroups;
--- SELECT COUNT(*) FROM groupmembers;
+-- Function to apply monthly loan interest
+CREATE OR REPLACE FUNCTION sp_apply_monthly_loan_interest(
+    p_groupid INTEGER,
+    p_periodmonth DATE
+) RETURNS VOID AS $$
+BEGIN
+    INSERT INTO loaninterestschedule (loanid, periodmonth, openingbalance, interestcharged, closingbalance)
+    SELECT
+        l.loanid,
+        p_periodmonth,
+        l.outstandingbalance,
+        l.outstandingbalance * l.interestrate,
+        l.outstandingbalance + (l.outstandingbalance * l.interestrate)
+    FROM loans l
+    WHERE l.groupid = p_groupid
+      AND l.status = 'active'
+      AND NOT EXISTS (
+          SELECT 1 FROM loaninterestschedule lis
+          WHERE lis.loanid = l.loanid AND lis.periodmonth = p_periodmonth
+      );
+
+    UPDATE loans l
+    SET outstandingbalance = outstandingbalance + (outstandingbalance * l.interestrate),
+        updatedat = CURRENT_TIMESTAMP
+    WHERE l.groupid = p_groupid
+      AND l.status = 'active';
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to approve membership request
+CREATE OR REPLACE FUNCTION sp_approve_membership_request(
+    p_requestid INTEGER,
+    p_approverid INTEGER
+) RETURNS VOID AS $$
+DECLARE
+    v_groupid INTEGER;
+    v_userid INTEGER;
+    v_memberid INTEGER;
+BEGIN
+    SELECT groupid, userid INTO v_groupid, v_userid
+    FROM membershiprequests
+    WHERE requestid = p_requestid AND status = 'pending';
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Request not found or already processed';
+    END IF;
+
+    INSERT INTO groupmembers (groupid, userid, role, joindate, isactive)
+    VALUES (v_groupid, v_userid, 'member', CURRENT_DATE, true)
+    ON CONFLICT (groupid, userid) DO UPDATE SET isactive = true, joindate = CURRENT_DATE
+    RETURNING memberid INTO v_memberid;
+
+    UPDATE membershiprequests
+    SET status = 'approved',
+        reviewedat = NOW(),
+        reviewedby = p_approverid,
+        reviewnote = 'Approved by signatory'
+    WHERE requestid = p_requestid;
+
+    INSERT INTO notifications (userid, type, title, message, relatedid, groupid)
+    VALUES (
+        v_userid,
+        'membership_approved',
+        'Join Request Approved',
+        'Your request to join the group has been approved!',
+        p_requestid,
+        v_groupid
+    );
+
+    INSERT INTO conversations (groupid, memberid, createdat)
+    VALUES (v_groupid, v_memberid, NOW())
+    ON CONFLICT (groupid, memberid) DO NOTHING;
+
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to reject membership request
+CREATE OR REPLACE FUNCTION sp_reject_membership_request(
+    p_requestid INTEGER,
+    p_approverid INTEGER,
+    p_reason TEXT DEFAULT NULL
+) RETURNS VOID AS $$
+BEGIN
+    UPDATE membershiprequests
+    SET status = 'rejected',
+        reviewedat = NOW(),
+        reviewedby = p_approverid,
+        reviewnote = p_reason
+    WHERE requestid = p_requestid AND status = 'pending';
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Request not found or already processed';
+    END IF;
+
+    DECLARE
+        v_userid INTEGER;
+        v_groupid INTEGER;
+    BEGIN
+        SELECT userid, groupid INTO v_userid, v_groupid
+        FROM membershiprequests
+        WHERE requestid = p_requestid;
+
+        INSERT INTO notifications (userid, type, title, message, relatedid, groupid)
+        VALUES (
+            v_userid,
+            'membership_rejected',
+            'Join Request Update',
+            COALESCE(p_reason, 'Your request to join the group was not approved.'),
+            p_requestid,
+            v_groupid
+        );
+    END;
+END;
+$$ LANGUAGE plpgsql;

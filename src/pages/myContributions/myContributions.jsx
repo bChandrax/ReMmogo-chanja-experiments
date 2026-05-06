@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import SideBar from '../../components/sideBar/sideBar';
+import { useToast } from '../../context/ToastContext';
 import DashboardNavBar from '../../components/NavBar/DashboardNavBar';
 import { contributionsAPI, groupsAPI } from '../../services/api';
 import './myContributions.css';
@@ -22,6 +23,7 @@ export default function MyContributions() {
   const [showRecord, setShowRecord] = useState(false);
   const [recForm, setRecForm] = useState({ groupid: '', month: '', proof: '' });
   const [submitting, setSubmitting] = useState(false);
+  const toast = useToast();
 
   useEffect(() => {
     fetchData();
@@ -73,15 +75,13 @@ export default function MyContributions() {
 
   const handleRecordPayment = async () => {
     if (!recForm.groupid || !recForm.month) {
-      alert('Please select a group and month');
+      toast.error('Please select a group and month');
       return;
     }
 
     try {
       setSubmitting(true);
 
-      // Find the contribution record for this month
-      // This is simplified - backend should handle creating/updating contribution records
       const response = await contributionsAPI.create({
         groupid: recForm.groupid,
         contributionmonth: recForm.month,
@@ -91,16 +91,15 @@ export default function MyContributions() {
       });
 
       if (response.success) {
-        alert('Payment submitted for approval');
+        toast.success('Payment submitted for approval');
         setShowRecord(false);
         setRecForm({ groupid: '', month: '', proof: '' });
-        fetchData(); // Refresh data
+        fetchData();
       } else {
-        alert(response.error || 'Failed to submit payment');
+        toast.error(response.error || 'Failed to submit payment');
       }
     } catch (err) {
-      console.error('Error submitting payment:', err);
-      alert('Failed to submit payment. Please try again.');
+      toast.error('Failed to submit payment. Please try again.');
     } finally {
       setSubmitting(false);
     }

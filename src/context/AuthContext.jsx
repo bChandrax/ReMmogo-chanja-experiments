@@ -93,8 +93,20 @@ export function AuthProvider({ children }) {
     setUser(null);
   };
 
+  const updateUser = (updatedData) => {
+    const updatedUser = {
+      ...user,
+      firstName: updatedData.firstname || updatedData.firstName || user.firstName,
+      lastName: updatedData.lastname || updatedData.lastName || user.lastName,
+      email: updatedData.email || user.email,
+      phoneNumber: updatedData.phonenumber || updatedData.phoneNumber || user.phoneNumber
+    };
+    localStorage.setItem('user', JSON.stringify(updatedUser));
+    setUser(updatedUser);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, register, logout, updateUser, loading }}>
       {children}
     </AuthContext.Provider>
   );

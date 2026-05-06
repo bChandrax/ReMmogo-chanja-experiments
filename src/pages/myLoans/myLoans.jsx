@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import SideBar from '../../components/sideBar/sideBar';
+import { useToast } from '../../context/ToastContext';
 import './myLoans.css';
 import DashboardNavBar from '../../components/NavBar/DashboardNavBar';
 import { loansAPI, groupsAPI } from '../../services/api';
@@ -20,6 +21,7 @@ export default function MyLoans() {
   const [showRequest, setShowRequest] = useState(false);
   const [reqForm, setReqForm] = useState({ groupid: '', amount: '', purpose: '' });
   const [requesting, setRequesting] = useState(false);
+  const toast = useToast();
 
   useEffect(() => {
     fetchData();
@@ -60,7 +62,7 @@ export default function MyLoans() {
 
   const handleRequestLoan = async () => {
     if (!reqForm.groupid || !reqForm.amount) {
-      alert('Please select a group and enter an amount');
+      toast.error('Please select a group and enter an amount');
       return;
     }
 
@@ -68,24 +70,21 @@ export default function MyLoans() {
       setRequesting(true);
 
       const response = await loansAPI.create({
-        groupid: reqForm.groupid,
-        principalamount: parseFloat(reqForm.amount),
-        purpose: reqForm.purpose || null,
-        status: 'pending',
-        interestrate: 20, // 20% monthly interest
+        groupId: reqForm.groupid,
+        principalAmount: parseFloat(reqForm.amount),
+        notes: reqForm.purpose || null,
       });
 
       if (response.success) {
-        alert('Loan request submitted for approval');
+        toast.success('Loan request submitted for approval');
         setShowRequest(false);
         setReqForm({ groupid: '', amount: '', purpose: '' });
-        fetchData(); // Refresh data
+        fetchData();
       } else {
-        alert(response.error || 'Failed to submit loan request');
+        toast.error(response.error || 'Failed to submit loan request');
       }
     } catch (err) {
-      console.error('Error submitting loan request:', err);
-      alert('Failed to submit loan request. Please try again.');
+      toast.error('Failed to submit loan request. Please try again.');
     } finally {
       setRequesting(false);
     }
@@ -99,14 +98,13 @@ export default function MyLoans() {
       });
 
       if (response.success) {
-        alert('Repayment submitted for approval');
+        toast.success('Repayment submitted for approval');
         fetchData();
       } else {
-        alert(response.error || 'Failed to submit repayment');
+        toast.error(response.error || 'Failed to submit repayment');
       }
     } catch (err) {
-      console.error('Error submitting repayment:', err);
-      alert('Failed to submit repayment. Please try again.');
+      toast.error('Failed to submit repayment. Please try again.');
     }
   };
 

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import SideBar from '../../components/sideBar/sideBar';
+import { useToast } from '../../context/ToastContext';
 import './ExplorePage.css';
 import DashboardNavBar from '../../components/NavBar/DashboardNavBar';
 import GroupCard from '../../components/GroupCard/GroupCard';
@@ -14,6 +15,7 @@ export default function ExplorePage() {
   const [joinGroup, setJoinGroup] = useState(null);
   const [joinMessage, setJoinMessage] = useState('');
   const [joining, setJoining] = useState(false);
+  const toast = useToast();
 
   useEffect(() => {
     fetchGroups();
@@ -84,21 +86,19 @@ export default function ExplorePage() {
     try {
       setJoining(true);
 
-      // Send join request to backend (uses auth token from request)
       const response = await membersAPI.create(joinGroup.groupid, 'join', {
         message: joinMessage || null,
       });
 
       if (response.success) {
-        alert('Join request sent successfully! The signatories will review your request and you will be notified of their decision.');
+        toast.success('Join request sent! Signatories will review your request and you will be notified.');
         setJoinGroup(null);
         setJoinMessage('');
       } else {
-        alert(response.error || 'Failed to send join request');
+        toast.error(response.error || 'Failed to send join request');
       }
     } catch (err) {
-      console.error('Error joining group:', err);
-      alert('Failed to send join request. Please try again.');
+      toast.error('Failed to send join request. Please try again.');
     } finally {
       setJoining(false);
     }

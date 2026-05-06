@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Bell } from 'lucide-react';
 import './NotificationDropdown.css';
+import { useToast } from '../../context/ToastContext';
 import { notificationsAPI } from '../../services/api';
 
 export default function NotificationDropdown() {
@@ -8,6 +9,7 @@ export default function NotificationDropdown() {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
+  const toast = useToast();
 
   useEffect(() => {
     if (isOpen) {
@@ -54,32 +56,61 @@ export default function NotificationDropdown() {
     try {
       const response = await notificationsAPI.approveRequest(requestId);
       if (response.success) {
-        alert('Member approved successfully');
-        fetchNotifications(); // Refresh notifications
+        toast.success('Member approved successfully');
+        fetchNotifications();
       } else {
-        alert(response.error || 'Failed to approve');
+        toast.error(response.error || 'Failed to approve');
       }
     } catch (err) {
-      console.error('Error approving request:', err);
-      alert('Failed to approve request');
+      toast.error('Failed to approve request');
     }
   };
 
   const handleRejectRequest = async (requestId) => {
     const reason = prompt('Enter reason for rejection (optional):');
-    if (reason === null) return; // User cancelled
+    if (reason === null) return;
 
     try {
       const response = await notificationsAPI.rejectRequest(requestId, reason || undefined);
       if (response.success) {
-        alert('Request rejected');
+        toast.success('Request rejected');
         fetchNotifications();
       } else {
-        alert(response.error || 'Failed to reject');
+        toast.error(response.error || 'Failed to reject');
       }
     } catch (err) {
-      console.error('Error rejecting request:', err);
-      alert('Failed to reject request');
+      toast.error('Failed to reject request');
+    }
+  };
+
+  const handleApproveLoan = async (loanId) => {
+    try {
+      const response = await notificationsAPI.approveLoan(loanId);
+      if (response.success) {
+        toast.success('Loan approved and disbursed');
+        fetchNotifications();
+      } else {
+        toast.error(response.error || 'Failed to approve loan');
+      }
+    } catch (err) {
+      toast.error('Failed to approve loan');
+    }
+  };
+
+  const handleRejectLoan = async (loanId) => {
+    const reason = prompt('Enter reason for rejection (optional):');
+    if (reason === null) return;
+
+    try {
+      const response = await notificationsAPI.rejectLoan(loanId, reason || undefined);
+      if (response.success) {
+        toast.success('Loan request rejected');
+        fetchNotifications();
+      } else {
+        toast.error(response.error || 'Failed to reject loan');
+      }
+    } catch (err) {
+      toast.error('Failed to reject loan');
     }
   };
 
@@ -93,6 +124,10 @@ export default function NotificationDropdown() {
         return '❌';
       case 'loan_request':
         return '💰';
+      case 'loan_approved':
+        return '✅💰';
+      case 'loan_rejected':
+        return '❌💰';
       case 'contribution_approved':
         return '💵';
       default:
@@ -187,6 +222,30 @@ export default function NotificationDropdown() {
                           }}
                         >
                           Reject
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Action buttons for loan requests */}
+                    {n.type === 'loan_request' && !n.isread && (
+                      <div className="nd-actions">
+                        <button
+                          className="nd-approve-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleApproveLoan(n.relatedid);
+                          }}
+                        >
+                          Approve Loan
+                        </button>
+                        <button
+                          className="nd-reject-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRejectLoan(n.relatedid);
+                          }}
+                        >
+                          Reject Loan
                         </button>
                       </div>
                     )}

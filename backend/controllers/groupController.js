@@ -22,10 +22,19 @@ exports.createGroup = async (req, res) => {
 
     const group = result.rows[0];
 
-    // Auto-enroll creator as admin
-    await db.query(
-      `INSERT INTO groupmembers (groupid, userid, role, joindate) VALUES ($1, $2, 'admin', CURRENT_DATE)`,
+    // Get the memberid of the creator
+    const memberResult = await db.query(
+      `INSERT INTO groupmembers (groupid, userid, role, joindate) 
+       VALUES ($1, $2, 'admin', CURRENT_DATE) 
+       ON CONFLICT (groupid, userid) DO UPDATE SET role = 'admin'
+       RETURNING memberid`,
       [group.groupid, req.user.id]
+    );
+
+    // Add creator to groupsignatories table
+    await db.query(
+      "INSERT INTO groupsignatories (groupid, memberid) VALUES ($1, $2) ON CONFLICT (groupid, memberid) DO NOTHING",
+      [group.groupid, memberResult.rows[0].memberid]
     );
 
     res.status(201).json(group);
@@ -135,6 +144,39 @@ exports.applyMonthlyInterest = async (req, res) => {
   try {
     await db.query("SELECT sp_apply_monthly_loan_interest($1, $2)", [groupId, periodMonth]);
     res.json({ message: `Monthly interest applied for ${periodMonth}` });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// DELETE GROUP (admin only)
+exports.deleteGroup = async (req, res) => {
+  const { groupId } = req.params;
+
+  try {
+    // Check if user is admin of the group
+    const adminCheck = await db.query(
+      `SELECT memberid FROM groupmembers
+       WHERE groupid = $1 AND userid = $2 AND role = 'admin' AND isactive = true`,
+      [groupId, req.user.id]
+    );
+    if (adminCheck.rows.length === 0) {
+      return res.status(403).json({ error: "Only group admins can delete the group" });
+    }
+
+    // Soft delete - mark group as inactive
+    await db.query(
+      `UPDATE motshelogroups SET isactive = false, updatedat = NOW() WHERE groupid = $1`,
+      [groupId]
+    );
+
+    // Mark all members as inactive
+    await db.query(
+      `UPDATE groupmembers SET isactive = false WHERE groupid = $1`,
+      [groupId]
+    );
+
+    res.json({ message: "Group deleted successfully" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

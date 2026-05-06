@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Re-Mmogo Database ERD</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #ffffff;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #000;
+            margin-bottom: 10px;
+            font-size: 32px;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 14px;
+        }
+
+        .erd-container {
+            position: relative;
+            width: 100%;
+            height: 2800px;
+            background: #fff;
+            border: 2px solid #000;
+            border-radius: 8px;
+        }
+
+        .table-box {
+            position: absolute;
+            background: white;
+            border: 2px solid #000;
+            border-radius: 6px;
+            min-width: 280px;
+            overflow: hidden;
+        }
+
+        .table-title {
+            background: #000;
+            color: white;
+            padding: 12px 16px;
+            font-weight: 600;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .table-icon {
+            font-size: 16px;
+        }
+
+        .table-fields {
+            padding: 0;
+        }
+
+        .field {
+            display: flex;
+            align-items: center;
+            padding: 8px 16px;
+            border-bottom: 1px solid #000;
+            font-size: 12px;
+        }
+
+        .field:last-child {
+            border-bottom: none;
+        }
+
+        .field-name {
+            flex: 1;
+            font-weight: 500;
+            color: #000;
+        }
+
+        .field-type {
+            color: #000;
+            font-size: 11px;
+        }
+
+        .pk {
+            border: 1px solid #000;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: 600;
+            margin-left: 6px;
+        }
+
+        .fk {
+            border: 1px solid #000;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: 600;
+            margin-left: 6px;
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 30px;
+            padding: 20px;
+            border: 2px solid #000;
+            border-radius: 6px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: #000;
+        }
+
+        .legend-key {
+            width: 24px;
+            height: 24px;
+            border: 2px solid #000;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 600;
+            background: #fff;
+        }
+
+        .legend-line {
+            width: 40px;
+            height: 3px;
+            background: #000;
+        }
+
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Re-Mmogo Database Entity Relationship Diagram</h1>
+        <p class="subtitle">Visual representation of tables and their relationships</p>
+
+        <div class="erd-container" id="erdContainer">
+        </div>
+
+        <div class="legend">
+            <div class="legend-item">
+                <span class="legend-key">PK</span>
+                <span>Primary Key</span>
+            </div>
+            <div class="legend-item">
+                <span class="legend-key">FK</span>
+                <span>Foreign Key</span>
+            </div>
+            <div class="legend-item">
+                <span class="legend-line"></span>
+                <span>Relationship (1:N)</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const tables = [
+            { name: 'users', icon: '👤', x: 50, y: 50, fields: [
+                { name: 'userid', pk: true }, { name: 'firstname' }, { name: 'lastname' },
+                { name: 'email' }, { name: 'phonenumber' }, { name: 'passwordhash' },
+                { name: 'nationalid' }, { name: 'isactive' }, { name: 'createdat' }, { name: 'updatedat' }
+            ]},
+            { name: 'motshelogroups', icon: '👥', x: 450, y: 50, fields: [
+                { name: 'groupid', pk: true }, { name: 'groupname' }, { name: 'description' },
+                { name: 'monthlycontribution' }, { name: 'requiredinterest' }, { name: 'loaninterestrate' },
+                { name: 'yearstartdate' }, { name: 'yearenddate' }, { name: 'isactive' }, { name: 'isopen' },
+                { name: 'maxmembers' }, { name: 'location' }, { name: 'createdat' }, { name: 'updatedat' }
+            ]},
+            { name: 'groupmembers', icon: '🔗', x: 850, y: 50, fields: [
+                { name: 'memberid', pk: true }, { name: 'groupid', fk: true }, { name: 'userid', fk: true },
+                { name: 'role' }, { name: 'joindate' }, { name: 'isactive' }, { name: 'createdat' }
+            ]},
+            { name: 'groupsignatories', icon: '⭐', x: 1200, y: 50, fields: [
+                { name: 'signatoryid', pk: true }, { name: 'groupid', fk: true }, { name: 'memberid', fk: true },
+                { name: 'assignedat' }, { name: 'isactive' }
+            ]},
+            { name: 'monthlycontributions', icon: '💰', x: 50, y: 450, fields: [
+                { name: 'contributionid', pk: true }, { name: 'groupid', fk: true }, { name: 'memberid', fk: true },
+                { name: 'contributionmonth' }, { name: 'amountdue' }, { name: 'amountpaid' }, { name: 'status' },
+                { name: 'proofofpayment' }, { name: 'submittedat' }, { name: 'updatedat' }
+            ]},
+            { name: 'contributionapprovals', icon: '✓', x: 450, y: 450, fields: [
+                { name: 'approvalid', pk: true }, { name: 'contributionid', fk: true },
+                { name: 'signatorymemberid', fk: true }, { name: 'decision' }, { name: 'decisionnote' }, { name: 'decidedat' }
+            ]},
+            { name: 'loans', icon: '💵', x: 850, y: 450, fields: [
+                { name: 'loanid', pk: true }, { name: 'groupid', fk: true }, { name: 'borrowermemberid', fk: true },
+                { name: 'principalamount' }, { name: 'interestrate' }, { name: 'outstandingbalance' },
+                { name: 'status' }, { name: 'purpose' }, { name: 'requestedat' }, { name: 'disbursedat' },
+                { name: 'duedate' }, { name: 'createdat' }, { name: 'updatedat' }
+            ]},
+            { name: 'loanapprovals', icon: '✓', x: 1200, y: 450, fields: [
+                { name: 'loanapprovalid', pk: true }, { name: 'loanid', fk: true },
+                { name: 'signatorymemberid', fk: true }, { name: 'decision' }, { name: 'decisionnote' }, { name: 'decidedat' }
+            ]},
+            { name: 'loanrepayments', icon: '💳', x: 50, y: 850, fields: [
+                { name: 'repaymentid', pk: true }, { name: 'loanid', fk: true }, { name: 'memberid', fk: true },
+                { name: 'amountpaid' }, { name: 'repaymentdate' }, { name: 'status' }, { name: 'proofofpayment' },
+                { name: 'submittedat' }, { name: 'updatedat' }
+            ]},
+            { name: 'repaymentapprovals', icon: '✓', x: 450, y: 850, fields: [
+                { name: 'repayapprovalid', pk: true }, { name: 'repaymentid', fk: true },
+                { name: 'signatorymemberid', fk: true }, { name: 'decision' }, { name: 'decisionnote' }, { name: 'decidedat' }
+            ]},
+            { name: 'loaninterestschedule', icon: '📊', x: 850, y: 850, fields: [
+                { name: 'scheduleid', pk: true }, { name: 'loanid', fk: true }, { name: 'periodmonth' },
+                { name: 'openingbalance' }, { name: 'interestcharged' }, { name: 'closingbalance' },
+                { name: 'isapplied' }, { name: 'createdat' }
+            ]},
+            { name: 'membershiprequests', icon: '📝', x: 1200, y: 850, fields: [
+                { name: 'requestid', pk: true }, { name: 'groupid', fk: true }, { name: 'userid', fk: true },
+                { name: 'message' }, { name: 'status' }, { name: 'requestedat' }, { name: 'reviewedat' },
+                { name: 'reviewedby', fk: true }, { name: 'reviewnote' }
+            ]},
+            { name: 'notifications', icon: '🔔', x: 50, y: 1250, fields: [
+                { name: 'notificationid', pk: true }, { name: 'userid', fk: true }, { name: 'type' },
+                { name: 'title' }, { name: 'message' }, { name: 'relatedid' }, { name: 'groupid', fk: true },
+                { name: 'isread' }, { name: 'createdat' }, { name: 'readat' }
+            ]},
+            { name: 'conversations', icon: '💬', x: 450, y: 1250, fields: [
+                { name: 'conversationid', pk: true }, { name: 'groupid', fk: true },
+                { name: 'createdby', fk: true }, { name: 'createdat' }
+            ]},
+            { name: 'conversation_members', icon: '👥', x: 850, y: 1250, fields: [
+                { name: 'memberid', pk: true }, { name: 'conversationid', fk: true },
+                { name: 'userid', fk: true }, { name: 'joinedat' }
+            ]},
+            { name: 'messages', icon: '📨', x: 1200, y: 1250, fields: [
+                { name: 'messageid', pk: true }, { name: 'conversationid', fk: true },
+                { name: 'senderid', fk: true }, { name: 'content' }, { name: 'messagetype' },
+                { name: 'createdat' }, { name: 'editedat' }
+            ]},
+            { name: 'message_reads', icon: '✓', x: 1200, y: 1650, fields: [
+                { name: 'readid', pk: true }, { name: 'messageid', fk: true },
+                { name: 'userid', fk: true }, { name: 'readat' }
+            ]}
+        ];
+
+        const relationships = [
+            { from: 'users', to: 'groupmembers' },
+            { from: 'motshelogroups', to: 'groupmembers' },
+            { from: 'groupmembers', to: 'groupsignatories' },
+            { from: 'motshelogroups', to: 'monthlycontributions' },
+            { from: 'groupmembers', to: 'monthlycontributions' },
+            { from: 'monthlycontributions', to: 'contributionapprovals' },
+            { from: 'groupmembers', to: 'contributionapprovals' },
+            { from: 'motshelogroups', to: 'loans' },
+            { from: 'groupmembers', to: 'loans' },
+            { from: 'loans', to: 'loanapprovals' },
+            { from: 'groupmembers', to: 'loanapprovals' },
+            { from: 'loans', to: 'loanrepayments' },
+            { from: 'groupmembers', to: 'loanrepayments' },
+            { from: 'loanrepayments', to: 'repaymentapprovals' },
+            { from: 'groupmembers', to: 'repaymentapprovals' },
+            { from: 'loans', to: 'loaninterestschedule' },
+            { from: 'motshelogroups', to: 'membershiprequests' },
+            { from: 'users', to: 'membershiprequests' },
+            { from: 'users', to: 'notifications' },
+            { from: 'motshelogroups', to: 'notifications' },
+            { from: 'motshelogroups', to: 'conversations' },
+            { from: 'users', to: 'conversations' },
+            { from: 'conversations', to: 'conversation_members' },
+            { from: 'users', to: 'conversation_members' },
+            { from: 'conversations', to: 'messages' },
+            { from: 'users', to: 'messages' },
+            { from: 'messages', to: 'message_reads' },
+            { from: 'users', to: 'message_reads' }
+        ];
+
+        const container = document.getElementById('erdContainer');
+
+        tables.forEach(table => {
+            const tableDiv = document.createElement('div');
+            tableDiv.className = 'table-box';
+            tableDiv.style.left = table.x + 'px';
+            tableDiv.style.top = table.y + 'px';
+            tableDiv.id = 'table-' + table.name;
+
+            let fieldsHTML = '';
+            table.fields.forEach(field => {
+                fieldsHTML += `
+                    <div class="field">
+                        <span class="field-name">${field.name}</span>
+                        ${field.pk ? '<span class="pk">PK</span>' : ''}
+                        ${field.fk ? '<span class="fk">FK</span>' : ''}
+                    </div>
+                `;
+            });
+
+            tableDiv.innerHTML = `
+                <div class="table-title">
+                    <span class="table-icon">${table.icon}</span>
+                    ${table.name}
+                </div>
+                <div class="table-fields">${fieldsHTML}</div>
+            `;
+
+            container.appendChild(tableDiv);
+        });
+
+        setTimeout(() => {
+            const svgContainer = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svgContainer.style.position = 'absolute';
+            svgContainer.style.top = '0';
+            svgContainer.style.left = '0';
+            svgContainer.style.width = '100%';
+            svgContainer.style.height = '100%';
+            svgContainer.style.pointerEvents = 'none';
+
+            relationships.forEach(rel => {
+                const fromTable = document.getElementById('table-' + rel.from);
+                const toTable = document.getElementById('table-' + rel.to);
+                if (!fromTable || !toTable) return;
+
+                const fromRect = fromTable.getBoundingClientRect();
+                const toRect = toTable.getBoundingClientRect();
+                const containerRect = container.getBoundingClientRect();
+
+                const x1 = fromRect.left + fromRect.width / 2 - containerRect.left;
+                const y1 = fromRect.top + fromRect.height / 2 - containerRect.top;
+                const x2 = toRect.left + toRect.width / 2 - containerRect.left;
+                const y2 = toRect.top + toRect.height / 2 - containerRect.top;
+
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', x1);
+                line.setAttribute('y1', y1);
+                line.setAttribute('x2', x2);
+                line.setAttribute('y2', y2);
+                line.setAttribute('stroke', '#000');
+                line.setAttribute('stroke-width', '2');
+                line.setAttribute('stroke-dasharray', '5,5');
+
+                const angle = Math.atan2(y2 - y1, x2 - x1);
+                const arrowSize = 10;
+                const arrowX = x2 - Math.cos(angle) * 25;
+                const arrowY = y2 - Math.sin(angle) * 25;
+
+                const arrowHead = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+                arrowHead.setAttribute('points', `${arrowX},${arrowY} ${arrowX - arrowSize * Math.cos(angle - Math.PI / 6)},${arrowY - arrowSize * Math.sin(angle - Math.PI / 6)} ${arrowX - arrowSize * Math.cos(angle + Math.PI / 6)},${arrowY - arrowSize * Math.sin(angle + Math.PI / 6)}`);
+                arrowHead.setAttribute('fill', '#000');
+
+                svgContainer.appendChild(line);
+                svgContainer.appendChild(arrowHead);
+            });
+
+            container.appendChild(svgContainer);
+        }, 100);
+    </script>
+</body>
+</html>

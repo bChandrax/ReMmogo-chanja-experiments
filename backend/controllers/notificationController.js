@@ -144,33 +144,158 @@ exports.approveMembershipRequest = async (req, res) => {
 exports.rejectMembershipRequest = async (req, res) => {
   const { requestId } = req.params;
   const { reason } = req.body;
-  
+
   try {
     // Get request details to find group
     const requestCheck = await db.query(
       `SELECT groupid FROM membershiprequests WHERE requestid = $1`,
       [requestId]
     );
-    
+
     if (requestCheck.rows.length === 0) {
       return res.status(404).json({ error: "Request not found" });
     }
-    
+
     const groupId = requestCheck.rows[0].groupid;
-    
+
     // Check if user is a signatory of this group
     const signatoryCheck = await db.query(
-      `SELECT 1 FROM groupmembers 
+      `SELECT 1 FROM groupmembers
        WHERE userid = $1 AND groupid = $2 AND role IN ('signatory', 'admin') AND isactive = true`,
       [req.user.id, groupId]
     );
-    
+
     if (signatoryCheck.rows.length === 0) {
       return res.status(403).json({ error: "Only signatories can reject requests" });
     }
-    
+
     await db.query("SELECT sp_reject_membership_request($1, $2, $3)", [requestId, req.user.id, reason || null]);
     res.json({ message: "Membership request rejected" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// APPROVE LOAN REQUEST
+exports.approveLoanRequest = async (req, res) => {
+  const { loanId } = req.params;
+
+  try {
+    // Get loan details to find group
+    const loanCheck = await db.query(
+      `SELECT groupid, borrowermemberid FROM loans WHERE loanid = $1`,
+      [loanId]
+    );
+
+    if (loanCheck.rows.length === 0) {
+      return res.status(404).json({ error: "Loan request not found" });
+    }
+
+    const groupId = loanCheck.rows[0].groupid;
+
+    // Check if user is a signatory of this group
+    const signatoryCheck = await db.query(
+      `SELECT 1 FROM groupmembers
+       WHERE userid = $1 AND groupid = $2 AND role IN ('signatory', 'admin') AND isactive = true`,
+      [req.user.id, groupId]
+    );
+
+    if (signatoryCheck.rows.length === 0) {
+      return res.status(403).json({ error: "Only signatories can approve loan requests" });
+    }
+
+    // Check if borrower is trying to approve their own loan
+    const borrowerCheck = await db.query(
+      `SELECT memberid FROM groupmembers WHERE memberid = $1 AND userid = $2`,
+      [loanCheck.rows[0].borrowermemberid, req.user.id]
+    );
+
+    if (borrowerCheck.rows.length > 0) {
+      return res.status(403).json({ error: "You cannot approve your own loan request" });
+    }
+
+    // Update loan status to active (disbursed)
+    await db.query(
+      `UPDATE loans SET status = 'disbursed', disbursedat = NOW(), updatedat = NOW() WHERE loanid = $1`,
+      [loanId]
+    );
+
+    // Get borrower info for notification
+    const borrowerResult = await db.query(
+      `SELECT u.firstname, u.lastname FROM groupmembers gm
+       JOIN users u ON u.userid = gm.userid
+       WHERE gm.memberid = $1`,
+      [loanCheck.rows[0].borrowermemberid]
+    );
+
+    const borrower = borrowerResult.rows[0];
+
+    // Create notification for borrower
+    await db.query(
+      `INSERT INTO notifications (userid, type, title, message, relatedid, groupid)
+       VALUES ($1, 'loan_approved', 'Loan Approved', $2, $3, $4)`,
+      [
+        borrowerResult.rows[0] ? req.user.id : loanCheck.rows[0].borrowermemberid,
+        `Your loan request has been approved and disbursed.`,
+        loanId,
+        groupId
+      ]
+    );
+
+    res.json({ message: "Loan request approved and disbursed" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// REJECT LOAN REQUEST
+exports.rejectLoanRequest = async (req, res) => {
+  const { loanId } = req.params;
+  const { reason } = req.body;
+
+  try {
+    // Get loan details to find group
+    const loanCheck = await db.query(
+      `SELECT groupid, borrowermemberid FROM loans WHERE loanid = $1`,
+      [loanId]
+    );
+
+    if (loanCheck.rows.length === 0) {
+      return res.status(404).json({ error: "Loan request not found" });
+    }
+
+    const groupId = loanCheck.rows[0].groupid;
+
+    // Check if user is a signatory of this group
+    const signatoryCheck = await db.query(
+      `SELECT 1 FROM groupmembers
+       WHERE userid = $1 AND groupid = $2 AND role IN ('signatory', 'admin') AND isactive = true`,
+      [req.user.id, groupId]
+    );
+
+    if (signatoryCheck.rows.length === 0) {
+      return res.status(403).json({ error: "Only signatories can reject loan requests" });
+    }
+
+    // Update loan status to rejected
+    await db.query(
+      `UPDATE loans SET status = 'rejected', updatedat = NOW() WHERE loanid = $1`,
+      [loanId]
+    );
+
+    // Create notification for borrower
+    await db.query(
+      `INSERT INTO notifications (userid, type, title, message, relatedid, groupid)
+       VALUES ($1, 'loan_rejected', 'Loan Request Update', $2, $3, $4)`,
+      [
+        loanCheck.rows[0].borrowermemberid,
+        reason || 'Your loan request was not approved.',
+        loanId,
+        groupId
+      ]
+    );
+
+    res.json({ message: "Loan request rejected" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

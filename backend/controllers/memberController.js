@@ -113,9 +113,10 @@ exports.enrollMember = async (req, res) => {
 
     const member = result.rows[0];
 
-    if (memberRole === "signatory") {
+    // Add to groupsignatories table if admin or signatory
+    if (memberRole === "signatory" || memberRole === "admin") {
       await db.query(
-        "INSERT INTO groupsignatories (groupid, memberid) VALUES ($1, $2)",
+        "INSERT INTO groupsignatories (groupid, memberid) VALUES ($1, $2) ON CONFLICT (groupid, memberid) DO NOTHING",
         [groupId, member.memberid]
       );
     }
@@ -163,19 +164,25 @@ exports.getGroupMembers = async (req, res) => {
 exports.getGroupSignatories = async (req, res) => {
   const { groupId } = req.params;
   try {
+    // Fetch signatories from groupmembers table (admin and signatory roles)
     const result = await db.query(
       `SELECT 
-        gs.signatoryid,
         gm.memberid,
+        gm.role,
+        u.userid,
         u.firstname,
         u.lastname,
-        u.email,
-        gm.role
-       FROM groupsignatories gs
-       INNER JOIN groupmembers gm ON gm.memberid = gs.memberid
+        u.email
+       FROM groupmembers gm
        INNER JOIN users u ON u.userid = gm.userid
-       WHERE gs.groupid = $1 AND gs.isactive = true AND gm.isactive = true
-       ORDER BY gs.assignedat`,
+       WHERE gm.groupid = $1 AND gm.role IN ('signatory', 'admin') AND gm.isactive = true
+       ORDER BY 
+         CASE gm.role 
+           WHEN 'admin' THEN 1 
+           WHEN 'signatory' THEN 2 
+           ELSE 3 
+         END,
+         u.firstname`,
       [groupId]
     );
     res.json(result.rows);

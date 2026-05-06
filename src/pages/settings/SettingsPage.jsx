@@ -1,77 +1,200 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { User, Mail, Phone, MapPin, Bell, Lock, CreditCard, Shield, Eye, EyeOff, Save, Check } from "lucide-react";
 import SideBar from "../../components/sideBar/sideBar";
 import DashboardNavBar from "../../components/NavBar/DashboardNavBar";
 import { useAuth } from "../../context/AuthContext";
+import { authAPI } from "../../services/api";
 import "./SettingsPage.css";
 
 export default function SettingsPage() {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const [activeTab, setActiveTab] = useState("profile");
   const [showPassword, setShowPassword] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  // Display name for payment cards — uppercase full name from logged-in user
-  const cardHolderName = user
-    ? `${user.firstName || ''} ${user.lastName || ''}`.trim().toUpperCase()
-    : 'ACCOUNT HOLDER';
+  // Profile state
+  const [profile, setProfile] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phoneNumber: '',
+    nationalId: '',
+    bio: ''
+  });
 
-  const handleSave = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+  // Notification preferences (stored in localStorage for now)
+  const [notifications, setNotifications] = useState({
+    newMessages: true,
+    contributionReminders: true,
+    loanApprovals: true,
+    securityAlerts: true,
+    monthlyStatements: true,
+    marketingEmails: false
+  });
+
+  // Password state
+  const [passwords, setPasswords] = useState({
+    current: '',
+    new: '',
+    confirm: ''
+  });
+
+  // Load user data on mount
+  useEffect(() => {
+    if (user) {
+      setProfile({
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        email: user.email || '',
+        phoneNumber: user.phoneNumber || '',
+        nationalId: user.nationalId || '',
+        bio: ''
+      });
+    }
+  }, [user]);
+
+  // Load notification preferences from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('notificationPreferences');
+    if (saved) {
+      setNotifications(JSON.parse(saved));
+    }
+  }, []);
+
+  const handleProfileSave = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await authAPI.updateProfile({
+        firstName: profile.firstName,
+        lastName: profile.lastName,
+        phoneNumber: profile.phoneNumber,
+        nationalID: profile.nationalId
+      });
+
+      if (response.success) {
+        updateUser(response.user);
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2000);
+      } else {
+        setError(response.error || 'Failed to update profile');
+      }
+    } catch (err) {
+      setError('Unable to save changes');
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const handlePasswordSave = async () => {
+    if (passwords.new !== passwords.confirm) {
+      setError('New passwords do not match');
+      return;
+    }
+
+    if (passwords.new.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await authAPI.updatePassword({
+        currentPassword: passwords.current,
+        newPassword: passwords.new
+      });
+
+      if (response.success) {
+        setSaved(true);
+        setPasswords({ current: '', new: '', confirm: '' });
+        setTimeout(() => setSaved(false), 2000);
+      } else {
+        setError(response.error || 'Failed to update password');
+      }
+    } catch (err) {
+      setError('Unable to update password');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleNotificationChange = (key) => {
+    const updated = { ...notifications, [key]: !notifications[key] };
+    setNotifications(updated);
+    localStorage.setItem('notificationPreferences', JSON.stringify(updated));
+  };
+
+  // Display name for payment cards
+  const cardHolderName = user
+    ? `${profile.firstName || ''} ${profile.lastName || ''}`.trim().toUpperCase()
+    : 'ACCOUNT HOLDER';
 
   return (
     <div className="dash">
       <SideBar />
-      
+
       <div className="main">
         <DashboardNavBar />
-        
+
         <div className="settings-content">
           <div className="settings-header">
             <div>
               <h1>Settings</h1>
               <p>Manage your account settings and preferences</p>
             </div>
-            <button className={`save-btn ${saved ? 'saved' : ''}`} onClick={handleSave}>
+            <button 
+              className={`save-btn ${saved ? 'saved' : ''}`} 
+              onClick={activeTab === 'security' ? handlePasswordSave : handleProfileSave}
+              disabled={loading}
+            >
               {saved ? <Check size={18} /> : <Save size={18} />}
               {saved ? "Saved!" : "Save Changes"}
             </button>
           </div>
 
+          {error && (
+            <div className="error-message">
+              <span>⚠️</span> {error}
+            </div>
+          )}
+
           <div className="settings-body">
             {/* Settings Tabs */}
             <div className="settings-tabs">
-              <button 
+              <button
                 className={`settings-tab ${activeTab === "profile" ? "active" : ""}`}
                 onClick={() => setActiveTab("profile")}
               >
                 <User size={18} />
                 Profile
               </button>
-              <button 
+              <button
                 className={`settings-tab ${activeTab === "notifications" ? "active" : ""}`}
                 onClick={() => setActiveTab("notifications")}
               >
                 <Bell size={18} />
                 Notifications
               </button>
-              <button 
+              <button
                 className={`settings-tab ${activeTab === "security" ? "active" : ""}`}
                 onClick={() => setActiveTab("security")}
               >
                 <Lock size={18} />
                 Security
               </button>
-              <button 
+              <button
                 className={`settings-tab ${activeTab === "payment" ? "active" : ""}`}
                 onClick={() => setActiveTab("payment")}
               >
                 <CreditCard size={18} />
                 Payment
               </button>
-              <button 
+              <button
                 className={`settings-tab ${activeTab === "privacy" ? "active" : ""}`}
                 onClick={() => setActiveTab("privacy")}
               >
@@ -90,7 +213,9 @@ export default function SettingsPage() {
                   </div>
 
                   <div className="profile-header">
-                    <div className="profile-avatar">HP</div>
+                    <div className="profile-avatar">
+                      {(profile.firstName?.[0] || 'U') + (profile.lastName?.[0] || 'S')}
+                    </div>
                     <div className="profile-actions">
                       <button className="btn-outline-sm">Change Photo</button>
                       <button className="btn-text-sm">Remove</button>
@@ -102,28 +227,50 @@ export default function SettingsPage() {
                       <label>First Name</label>
                       <div className="input-field">
                         <div className="input-icon-wrapper"><User size={18} /></div>
-                        <input className="inner-form-input" type="text" defaultValue="Hello" />
+                        <input 
+                          className="inner-form-input" 
+                          type="text" 
+                          value={profile.firstName}
+                          onChange={(e) => setProfile({...profile, firstName: e.target.value})}
+                        />
                       </div>
                     </div>
                     <div className="form-group">
                       <label>Last Name</label>
                       <div className="input-field">
                         <div className="input-icon-wrapper"><User size={18} /></div>
-                        <input className="inner-form-input" type="text" defaultValue="Parvez" />
+                        <input 
+                          className="inner-form-input" 
+                          type="text" 
+                          value={profile.lastName}
+                          onChange={(e) => setProfile({...profile, lastName: e.target.value})}
+                        />
                       </div>
                     </div>
                     <div className="form-group">
                       <label>Email Address</label>
                       <div className="input-field">
                         <div className="input-icon-wrapper"><Mail size={18} /></div>
-                        <input className="inner-form-input" type="email" defaultValue="hello.parvez@example.com" />
+                        <input 
+                          className="inner-form-input" 
+                          type="email" 
+                          value={profile.email}
+                          disabled
+                          style={{ background: '#f5f5f5', cursor: 'not-allowed' }}
+                        />
                       </div>
+                      <small style={{ color: '#888', marginTop: '4px' }}>Email cannot be changed</small>
                     </div>
                     <div className="form-group">
                       <label>Phone Number</label>
                       <div className="input-field">
                         <div className="input-icon-wrapper"><Phone size={18} /></div>
-                        <input className="inner-form-input" type="tel" defaultValue="+267 72 123 456" />
+                        <input 
+                          className="inner-form-input" 
+                          type="tel" 
+                          value={profile.phoneNumber}
+                          onChange={(e) => setProfile({...profile, phoneNumber: e.target.value})}
+                        />
                       </div>
                     </div>
                     <div className="form-group full-width">
@@ -135,11 +282,12 @@ export default function SettingsPage() {
                     </div>
                     <div className="form-group full-width">
                       <label>Bio</label>
-                      <textarea 
-                        className="form-input" 
-                        rows={4} 
-                        placeholder="Tell us about yourself..." 
-                        defaultValue="Active member of multiple savings groups. Passionate about community development and financial literacy." 
+                      <textarea
+                        className="form-input"
+                        rows={4}
+                        placeholder="Tell us about yourself..."
+                        value={profile.bio}
+                        onChange={(e) => setProfile({...profile, bio: e.target.value})}
                       />
                     </div>
                   </div>
@@ -162,7 +310,11 @@ export default function SettingsPage() {
                           <span className="notification-desc">Get notified when someone messages in your groups</span>
                         </div>
                         <label className="toggle">
-                          <input type="checkbox" defaultChecked />
+                          <input 
+                            type="checkbox" 
+                            checked={notifications.newMessages}
+                            onChange={() => handleNotificationChange('newMessages')}
+                          />
                           <span className="toggle-slider"></span>
                         </label>
                       </div>
@@ -172,7 +324,11 @@ export default function SettingsPage() {
                           <span className="notification-desc">Receive reminders when contributions are due</span>
                         </div>
                         <label className="toggle">
-                          <input type="checkbox" defaultChecked />
+                          <input 
+                            type="checkbox" 
+                            checked={notifications.contributionReminders}
+                            onChange={() => handleNotificationChange('contributionReminders')}
+                          />
                           <span className="toggle-slider"></span>
                         </label>
                       </div>
@@ -182,7 +338,11 @@ export default function SettingsPage() {
                           <span className="notification-desc">Get notified when loans are approved or rejected</span>
                         </div>
                         <label className="toggle">
-                          <input type="checkbox" defaultChecked />
+                          <input 
+                            type="checkbox" 
+                            checked={notifications.loanApprovals}
+                            onChange={() => handleNotificationChange('loanApprovals')}
+                          />
                           <span className="toggle-slider"></span>
                         </label>
                       </div>
@@ -196,7 +356,11 @@ export default function SettingsPage() {
                           <span className="notification-desc">Get notified about important security updates</span>
                         </div>
                         <label className="toggle">
-                          <input type="checkbox" defaultChecked />
+                          <input 
+                            type="checkbox" 
+                            checked={notifications.securityAlerts}
+                            onChange={() => handleNotificationChange('securityAlerts')}
+                          />
                           <span className="toggle-slider"></span>
                         </label>
                       </div>
@@ -206,7 +370,11 @@ export default function SettingsPage() {
                           <span className="notification-desc">Receive monthly summary of your activities</span>
                         </div>
                         <label className="toggle">
-                          <input type="checkbox" defaultChecked />
+                          <input 
+                            type="checkbox" 
+                            checked={notifications.monthlyStatements}
+                            onChange={() => handleNotificationChange('monthlyStatements')}
+                          />
                           <span className="toggle-slider"></span>
                         </label>
                       </div>
@@ -216,7 +384,11 @@ export default function SettingsPage() {
                           <span className="notification-desc">Receive updates about new features and promotions</span>
                         </div>
                         <label className="toggle">
-                          <input type="checkbox" />
+                          <input 
+                            type="checkbox" 
+                            checked={notifications.marketingEmails}
+                            onChange={() => handleNotificationChange('marketingEmails')}
+                          />
                           <span className="toggle-slider"></span>
                         </label>
                       </div>
@@ -239,8 +411,13 @@ export default function SettingsPage() {
                         <label>Current Password</label>
                         <div className="input-field">
                           <div className="input-icon-wrapper"><Lock size={18} /></div>
-                          <input type={showPassword ? "text" : "password"} placeholder="Enter current password" />
-                          <button 
+                          <input 
+                            type={showPassword ? "text" : "password"} 
+                            placeholder="Enter current password" 
+                            value={passwords.current}
+                            onChange={(e) => setPasswords({...passwords, current: e.target.value})}
+                          />
+                          <button
                             className="password-toggle"
                             onClick={() => setShowPassword(!showPassword)}
                           >
@@ -252,18 +429,30 @@ export default function SettingsPage() {
                         <label>New Password</label>
                         <div className="input-field">
                           <div className="input-icon-wrapper"><Lock size={18} /></div>
-                          <input type="password" placeholder="Enter new password" />
+                          <input 
+                            type="password" 
+                            placeholder="Enter new password" 
+                            value={passwords.new}
+                            onChange={(e) => setPasswords({...passwords, new: e.target.value})}
+                          />
                         </div>
                       </div>
                       <div className="form-group full-width">
                         <label>Confirm New Password</label>
                         <div className="input-field">
                           <div className="input-icon-wrapper"><Lock size={18} /></div>
-                          <input type="password" placeholder="Confirm new password" />
+                          <input 
+                            type="password" 
+                            placeholder="Confirm new password" 
+                            value={passwords.confirm}
+                            onChange={(e) => setPasswords({...passwords, confirm: e.target.value})}
+                          />
                         </div>
                       </div>
                     </div>
-                    <button className="btn-primary">Update Password</button>
+                    <button className="btn-primary" onClick={handlePasswordSave} disabled={loading}>
+                      {loading ? 'Updating...' : 'Update Password'}
+                    </button>
                   </div>
 
                   <div className="security-section">
@@ -292,16 +481,6 @@ export default function SettingsPage() {
                         </div>
                       </div>
                       <span className="session-badge current">Current</span>
-                    </div>
-                    <div className="session-item">
-                      <div className="session-info">
-                        <div className="session-icon"><Bell size={18} /></div>
-                        <div>
-                          <span className="session-title">Safari on iPhone</span>
-                          <span className="session-desc">Gaborone, Botswana • 2 days ago</span>
-                        </div>
-                      </div>
-                      <button className="btn-text-sm danger">Revoke</button>
                     </div>
                   </div>
                 </div>
