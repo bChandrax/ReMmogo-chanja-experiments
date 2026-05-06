@@ -1,6 +1,77 @@
 const { db } = require("../config/db");
 
-// ENROLL MEMBER INTO GROUP
+// REQUEST TO JOIN GROUP (creates pending membership request)
+exports.requestToJoin = async (req, res) => {
+  const { groupId } = req.params;
+  const { message } = req.body;
+
+  try {
+    // Check if group exists
+    const groupCheck = await db.query(
+      "SELECT groupid, groupname FROM motshelogroups WHERE groupid = $1 AND isactive = true",
+      [groupId]
+    );
+    if (groupCheck.rows.length === 0) {
+      return res.status(404).json({ error: "Group not found or inactive" });
+    }
+
+    // Check if user is already a member
+    const existingMember = await db.query(
+      "SELECT memberid FROM groupmembers WHERE groupid = $1 AND userid = $2 AND isactive = true",
+      [groupId, req.user.id]
+    );
+    if (existingMember.rows.length > 0) {
+      return res.status(400).json({ error: "You are already a member of this group" });
+    }
+
+    // Check if there's already a pending request
+    const existingRequest = await db.query(
+      "SELECT * FROM membershiprequests WHERE groupid = $1 AND userid = $2 AND status = 'pending'",
+      [groupId, req.user.id]
+    );
+    if (existingRequest.rows.length > 0) {
+      return res.status(400).json({ error: "You already have a pending request for this group" });
+    }
+
+    // Create membership request
+    const result = await db.query(
+      `INSERT INTO membershiprequests (groupid, userid, message, status, requestedat)
+       VALUES ($1, $2, $3, 'pending', NOW()) RETURNING *`,
+      [groupId, req.user.id, message || null]
+    );
+
+    // Create notification for all signatories of the group
+    const signatories = await db.query(
+      `SELECT gm.userid FROM groupmembers gm
+       WHERE gm.groupid = $1 AND gm.role IN ('signatory', 'admin') AND gm.isactive = true`,
+      [groupId]
+    );
+
+    const notificationPromises = signatories.rows.map(async (sig) => {
+      await db.query(
+        `INSERT INTO notifications (userid, type, title, message, relatedid, groupid)
+         VALUES ($1, 'join_request', 'New Join Request', $2, $3, $4)`,
+        [
+          sig.userid,
+          `${req.user.firstname} ${req.user.lastname} wants to join ${groupCheck.rows[0].groupname}`,
+          result.rows[0].requestid,
+          groupId
+        ]
+      );
+    });
+
+    await Promise.all(notificationPromises);
+
+    res.status(201).json({ 
+      message: "Join request sent successfully. Signatories will review your request.",
+      request: result.rows[0]
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// ENROLL MEMBER INTO GROUP (for direct enrollment by admin)
 exports.enrollMember = async (req, res) => {
   const { groupId } = req.params;
   const { userId, role } = req.body;

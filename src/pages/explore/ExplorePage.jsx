@@ -55,8 +55,9 @@ export default function ExplorePage() {
           status: group.isactive ? 'Active' : 'Inactive',
           colorIndex: index % 4,
           signatory: false,
-          open: group.isactive && (group.membercount || 0) < 12, // Open if under 12 members
+          open: group.isactive && (group.membercount || 0) < 12, // Open if active and under 12 members
           location: group.location || 'Botswana',
+          isactive: group.isactive,
         }));
 
         setGroups(transformedGroups);
@@ -79,25 +80,17 @@ export default function ExplorePage() {
 
   const handleJoinRequest = async () => {
     if (!joinGroup) return;
-    
+
     try {
       setJoining(true);
-      
-      // Get current user from localStorage
-      const token = localStorage.getItem('token');
-      if (!token) {
-        alert('Please login to join a group');
-        window.location.href = '/login';
-        return;
-      }
-      
-      // Send join request to backend
-      const response = await membersAPI.create(joinGroup.groupid, {
+
+      // Send join request to backend (uses auth token from request)
+      const response = await membersAPI.create(joinGroup.groupid, 'join', {
         message: joinMessage || null,
       });
-      
+
       if (response.success) {
-        alert('Join request sent successfully! The signatories will review your request.');
+        alert('Join request sent successfully! The signatories will review your request and you will be notified of their decision.');
         setJoinGroup(null);
         setJoinMessage('');
       } else {
@@ -190,11 +183,13 @@ export default function ExplorePage() {
             <div className="ep-groups-grid">
               {filtered.map((g, i) => (
                 <div key={g.groupid} className="ep-card-wrap">
-                  <GroupCard {...g} colorIndex={i} />
+                  <Link to={`/GrpDash?id=${g.groupid}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                    <GroupCard {...g} colorIndex={i} />
+                  </Link>
                   <div className="ep-card-meta">
                     <span className="ep-location">📍 {g.location}</span>
-                    {g.open ? (
-                      <button className="ep-join-btn" onClick={() => setJoinGroup(g)}>
+                    {(g.memberCount || 0) < 12 ? (
+                      <button className="ep-join-btn" onClick={(e) => { e.preventDefault(); setJoinGroup(g); }}>
                         Request to Join
                       </button>
                     ) : (
