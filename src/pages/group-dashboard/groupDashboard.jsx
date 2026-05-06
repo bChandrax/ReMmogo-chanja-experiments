@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import SideBar from '../../components/sideBar/sideBar';
 import DashboardNavBar from '../../components/NavBar/DashboardNavBar';
 import { useToast } from '../../context/ToastContext';
-import { groupsAPI, membersAPI, contributionsAPI, loansAPI } from '../../services/api';
+import { groupsAPI, membersAPI, contributionsAPI, loansAPI, notificationsAPI } from '../../services/api';
 import './grp-dash.css';
 
 const STATUS_STYLE = {
@@ -79,7 +79,7 @@ export default function GroupDashboard() {
 
       // Add pending loan approvals
       loansRes.data?.forEach(loan => {
-        if (loan.status === 'pending_approval' || loan.status === 'approved') {
+        if (loan.status === 'pending_approval' || loan.status === 'pending' || loan.status === 'approved') {
           approvals.push({
             type: 'Loan Request',
             memberId: loan.borrowermemberid,
@@ -94,7 +94,7 @@ export default function GroupDashboard() {
 
       // Add pending contribution approvals
       contribRes.data?.forEach(contrib => {
-        if (contrib.status === 'submitted') {
+        if (contrib.status === 'submitted' || contrib.status === 'pending') {
           approvals.push({
             type: 'Contribution',
             memberId: contrib.memberid,
@@ -121,9 +121,7 @@ export default function GroupDashboard() {
       let response;
 
       if (approval.type === 'Loan Request') {
-        response = await loansAPI.update(approval.loanId, {
-          status: 'active',
-        });
+        response = await notificationsAPI.approveLoan(approval.loanId);
       } else if (approval.type === 'Contribution') {
         response = await contributionsAPI.update(approval.contributionId, {
           status: 'paid',
@@ -146,9 +144,9 @@ export default function GroupDashboard() {
       let response;
 
       if (approval.type === 'Loan Request') {
-        response = await loansAPI.update(approval.loanId, {
-          status: 'rejected',
-        });
+        const reason = prompt('Enter reason for rejection (optional):');
+        if (reason === null) return; // User cancelled
+        response = await notificationsAPI.rejectLoan(approval.loanId, reason || undefined);
       } else if (approval.type === 'Contribution') {
         response = await contributionsAPI.update(approval.contributionId, {
           status: 'not_paid',
