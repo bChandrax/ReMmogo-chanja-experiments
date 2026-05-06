@@ -22,10 +22,19 @@ exports.createGroup = async (req, res) => {
 
     const group = result.rows[0];
 
-    // Auto-enroll creator as admin
-    await db.query(
-      `INSERT INTO groupmembers (groupid, userid, role, joindate) VALUES ($1, $2, 'admin', CURRENT_DATE)`,
+    // Get the memberid of the creator
+    const memberResult = await db.query(
+      `INSERT INTO groupmembers (groupid, userid, role, joindate) 
+       VALUES ($1, $2, 'admin', CURRENT_DATE) 
+       ON CONFLICT (groupid, userid) DO UPDATE SET role = 'admin'
+       RETURNING memberid`,
       [group.groupid, req.user.id]
+    );
+
+    // Add creator to groupsignatories table
+    await db.query(
+      "INSERT INTO groupsignatories (groupid, memberid) VALUES ($1, $2) ON CONFLICT (groupid, memberid) DO NOTHING",
+      [group.groupid, memberResult.rows[0].memberid]
     );
 
     res.status(201).json(group);
