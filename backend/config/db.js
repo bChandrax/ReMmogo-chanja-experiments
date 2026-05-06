@@ -6,17 +6,15 @@ const isProduction = process.env.NODE_ENV === "production" ||
   (process.env.DATABASE_URL && process.env.DATABASE_URL.includes('render.com'));
 
 // Database configuration
-// Try to use individual DB variables if DATABASE_URL is not set or is a placeholder
 let poolConfig = {};
 
+// Use DATABASE_URL if available, otherwise use individual DB variables
 if (process.env.DATABASE_URL && !process.env.DATABASE_URL.includes('YOUR_PASSWORD')) {
-  // Use DATABASE_URL if it's properly configured
   poolConfig = {
     connectionString: process.env.DATABASE_URL,
     ssl: isProduction ? { rejectUnauthorized: false } : false,
   };
 } else if (process.env.DB_HOST && process.env.DB_DATABASE) {
-  // Fall back to individual DB variables
   poolConfig = {
     host: process.env.DB_HOST,
     database: process.env.DB_DATABASE,
@@ -26,10 +24,14 @@ if (process.env.DATABASE_URL && !process.env.DATABASE_URL.includes('YOUR_PASSWOR
     ssl: isProduction ? { rejectUnauthorized: false } : false,
   };
 } else {
-  // Default to Render production database
+  // Fallback defaults
   poolConfig = {
-    connectionString: 'postgresql://remmogo_user:UF3ZQitedyJDwmVkL2ZLPrK0Znwp9KKH@dpg-d7t40p8sfn5c73aiq7j0-a/remmogo',
-    ssl: { rejectUnauthorized: false },
+    host: 'localhost',
+    database: 'remmogo',
+    user: 'postgres',
+    password: 'postgres',
+    port: 5432,
+    ssl: false,
   };
 }
 
@@ -39,20 +41,17 @@ const connectDB = async () => {
   try {
     await pool.query("SELECT 1");
     console.log("✅ Connected to PostgreSQL successfully");
-    console.log(`📊 Database: remmogo`);
-    console.log(`📊 Host: dpg-d7t40p8sfn5c73aiq7j0-a`);
+    console.log(`📊 Database: ${process.env.DB_DATABASE || 'remmogo'}`);
+    console.log(`📊 Host: ${process.env.DB_HOST || 'localhost'}`);
   } catch (err) {
     console.error("❌ DB connection failed:", err.message);
     console.error("💡 Check your .env file and ensure PostgreSQL is running");
-    // Don't exit process in development - allow retries
     if (isProduction) {
       process.exit(1);
     }
   }
 };
 
-// Helper: mimics mssql's tagged template query style
-// Usage: await db.query("SELECT * FROM users WHERE id = $1", [id])
 const db = {
   query: (text, params) => pool.query(text, params),
 };
