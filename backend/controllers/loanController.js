@@ -4,61 +4,97 @@ const { db } = require("../config/db");
 exports.requestLoan = async (req, res) => {
   const { groupId, principalAmount, notes } = req.body;
 
+  console.log('📝 Loan request received:', { groupId, principalAmount, notes, userId: req.user?.id });
+
   if (!groupId || !principalAmount || principalAmount <= 0) {
     return res.status(400).json({ error: "groupId and valid principalAmount are required" });
   }
 
   try {
+    // Check if user is a member of the group
     const memberCheck = await db.query(
       "SELECT memberid FROM groupmembers WHERE userid = $1 AND groupid = $2 AND isactive = true",
       [req.user.id, groupId]
     );
-    if (memberCheck.rows.length === 0) return res.status(403).json({ error: "You are not a member of this group" });
+    
+    if (memberCheck.rows.length === 0) {
+      console.log('❌ User is not a member of this group');
+      return res.status(403).json({ error: "You are not a member of this group" });
+    }
 
     const borrowerMemberID = memberCheck.rows[0].memberid;
+    console.log('✅ Borrower member ID:', borrowerMemberID);
 
+    // Get group loan interest rate
     const groupCheck = await db.query(
       "SELECT loaninterestrate FROM motshelogroups WHERE groupid = $1",
       [groupId]
     );
+    
+    if (groupCheck.rows.length === 0) {
+      console.log('❌ Group not found');
+      return res.status(404).json({ error: "Group not found" });
+    }
+    
     const interestRate = groupCheck.rows[0].loaninterestrate;
+    console.log('✅ Interest rate:', interestRate);
 
+    // Create the loan
     const result = await db.query(
       `INSERT INTO loans (groupid, borrowermemberid, principalamount, interestrate, outstandingbalance, notes, status)
        VALUES ($1, $2, $3, $4, $5, $6, 'pending_approval') RETURNING *`,
       [groupId, borrowerMemberID, principalAmount, interestRate, principalAmount, notes || null]
     );
 
+    console.log('✅ Loan created:', result.rows[0].loanid);
+
     // Create notification for all signatories of the group
-    const signatories = await db.query(
-      `SELECT gm.userid, gm.memberid FROM groupmembers gm
-       WHERE gm.groupid = $1 AND gm.role IN ('signatory', 'admin') AND gm.isactive = true`,
-      [groupId]
-    );
-
-    const userResult = await db.query(
-      "SELECT firstname, lastname FROM users WHERE userid = $1",
-      [req.user.id]
-    );
-    const userName = userResult.rows[0];
-
-    const notificationPromises = signatories.rows.map(async (sig) => {
-      await db.query(
-        `INSERT INTO notifications (userid, type, title, message, relatedid, groupid)
-         VALUES ($1, 'loan_request', 'New Loan Request', $2, $3, $4)`,
-        [
-          sig.userid,
-          `${userName.firstname} ${userName.lastname} requested a loan of P${principalAmount}`,
-          result.rows[0].loanid,
-          groupId
-        ]
+    try {
+      const signatories = await db.query(
+        `SELECT gm.userid, gm.memberid FROM groupmembers gm
+         WHERE gm.groupid = $1 AND gm.role IN ('signatory', 'admin') AND gm.isactive = true`,
+        [groupId]
       );
-    });
 
-    await Promise.all(notificationPromises);
+      console.log('📢 Found signatories:', signatories.rows.length);
 
+      const userResult = await db.query(
+        "SELECT firstname, lastname FROM users WHERE userid = $1",
+        [req.user.id]
+      );
+      const userName = userResult.rows[0];
+
+      const notificationPromises = signatories.rows.map(async (sig) => {
+        try {
+          await db.query(
+            `INSERT INTO notifications (userid, type, title, message, relatedid, groupid)
+             VALUES ($1, 'loan_request', 'New Loan Request', $2, $3, $4)`,
+            [
+              sig.userid,
+              `${userName.firstname} ${userName.lastname} requested a loan of P${principalAmount}`,
+              result.rows[0].loanid,
+              groupId
+            ]
+          );
+          console.log('✅ Notification sent to signatory:', sig.userid);
+        } catch (notifErr) {
+          console.error('⚠️ Failed to create notification for signatory:', sig.userid, notifErr.message);
+          // Don't fail the whole request if notification fails
+        }
+      });
+
+      await Promise.all(notificationPromises);
+      console.log('✅ All notifications sent');
+    } catch (notifErr) {
+      console.error('⚠️ Notification creation failed, but loan was created:', notifErr.message);
+      // Don't fail the loan request if notifications fail
+    }
+
+    console.log('✅ Loan request completed successfully');
     res.status(201).json({ message: "Loan request submitted. Awaiting signatory approval.", loan: result.rows[0] });
   } catch (err) {
+    console.error('❌ Loan request failed:', err.message);
+    console.error('Stack:', err.stack);
     res.status(500).json({ error: err.message });
   }
 };
