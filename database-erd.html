@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Re-Mmogo Database ERD</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 40px;
+            font-size: 32px;
+            font-weight: 700;
+        }
+
+        .erd-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 24px;
+        }
+
+        .table-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            border: 2px solid #e9ecef;
+            overflow: hidden;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .table-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+        }
+
+        .table-header {
+            background: linear-gradient(135deg, #2c3e1f 0%, #40916C 100%);
+            color: white;
+            padding: 14px 18px;
+            font-weight: 600;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .table-icon {
+            width: 28px;
+            height: 28px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        .table-body {
+            padding: 0;
+        }
+
+        .field {
+            display: flex;
+            align-items: center;
+            padding: 10px 18px;
+            border-bottom: 1px solid #e9ecef;
+            font-size: 13px;
+            transition: background 0.15s;
+        }
+
+        .field:hover {
+            background: #e9ecef;
+        }
+
+        .field:last-child {
+            border-bottom: none;
+        }
+
+        .field-name {
+            flex: 1;
+            font-weight: 500;
+            color: #2c3e50;
+        }
+
+        .field-type {
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .field-key {
+            background: #fff3e0;
+            color: #f57c00;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+
+        .field-fk {
+            background: #fce4ec;
+            color: #c2185b;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+
+        .section-title {
+            grid-column: 1 / -1;
+            font-size: 20px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin: 30px 0 15px 0;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #2c3e1f;
+        }
+
+        .core-tables .table-header { background: linear-gradient(135deg, #2c3e1f 0%, #40916C 100%); }
+        .financial-tables .table-header { background: linear-gradient(135deg, #1976d2 0%, #42a5f5 100%); }
+        .governance-tables .table-header { background: linear-gradient(135deg, #f57c00 0%, #ff9800 100%); }
+        .communication-tables .table-header { background: linear-gradient(135deg, #7b1fa2 0%, #9c27b0 100%); }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 24px;
+            }
+
+            .erd-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+
+            .container {
+                box-shadow: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Re-Mmogo Database Schema</h1>
+
+        <div class="erd-grid">
+            <div class="section-title core-tables">Core Tables</div>
+
+            <div class="table-card core-tables">
+                <div class="table-header">
+                    <div class="table-icon">👤</div>
+                    users
+                </div>
+                <div class="table-body">
+                    <div class="field">
+                        <span class="field-name">userid</span>
+                        <span class="field-type">SERIAL</span>
+                        <span class="field-key">PK</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">firstname</span>
+                        <span class="field-type">VARCHAR(100)</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">lastname</span>
+                        <span class="field-type">VARCHAR(100)</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">email</span>
+                        <span class="field-type">VARCHAR(255)</span>
+                        <span class="field-key">UNIQUE</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">phonenumber</span>
+                        <span class="field-type">VARCHAR(20)</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">passwordhash</span>
+                        <span class="field-type">VARCHAR(255)</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">nationalid</span>
+                        <span class="field-type">VARCHAR(50)</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">isactive</span>
+                        <span class="field-type">BOOLEAN</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">createdat</span>
+                        <span class="field-type">TIMESTAMP</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">updatedat</span>
+                        <span class="field-type">TIMESTAMP</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-card core-tables">
+                <div class="table-header">
+                    <div class="table-icon">👥</div>
+                    motshelogroups
+                </div>
+                <div class="table-body">
+                    <div class="field">
+                        <span class="field-name">groupid</span>
+                        <span class="field-type">SERIAL</span>
+                        <span class="field-key">PK</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">groupname</span>
+                        <span class="field-type">VARCHAR(255)</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">description</span>
+                        <span class="field-type">TEXT</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">monthlycontribution</span>
+                        <span class="field-type">DECIMAL(12,2)</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">requiredinterest</span>
+                        <span class="field-type">DECIMAL(12,2)</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">loaninterestrate</span>
+                        <span class="field-type">DECIMAL(5,4)</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">yearstartdate</span>
+                        <span class="field-type">DATE</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">yearenddate</span>
+                        <span class="field-type">DATE</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">isactive</span>
+                        <span class="field-type">BOOLEAN</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">isopen</span>
+                        <span class="field-type">BOOLEAN</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">maxmembers</span>
+                        <span class="field-type">INTEGER</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">location</span>
+                        <span class="field-type">VARCHAR(255)</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">createdat</span>
+                        <span class="field-type">TIMESTAMP</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">updatedat</span>
+                        <span class="field-type">TIMESTAMP</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-card core-tables">
+                <div class="table-header">
+                    <div class="table-icon">🔗</div>
+                    groupmembers
+                </div>
+                <div class="table-body">
+                    <div class="field">
+                        <span class="field-name">memberid</span>
+                        <span class="field-type">SERIAL</span>
+                        <span class="field-key">PK</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">groupid</span>
+                        <span class="field-type">INTEGER</span>
+                        <span class="field-fk">FK</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">userid</span>
+                        <span class="field-type">INTEGER</span>
+                        <span class="field-fk">FK</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">role</span>
+                        <span class="field-type">VARCHAR(50)</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">joindate</span>
+                        <span class="field-type">DATE</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">isactive</span>
+                        <span class="field-type">BOOLEAN</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">createdat</span>
+                        <span class="field-type">TIMESTAMP</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-card core-tables">
+                <div class="table-header">
+                    <div class="table-icon">⭐</div>
+                    groupsignatories
+                </div>
+                <div class="table-body">
+                    <div class="field">
+                        <span class="field-name">signatoryid</span>
+                        <span class="field-type">SERIAL</span>
+                        <span class="field-key">PK</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">groupid</span>
+                        <span class="field-type">INTEGER</span>
+                        <span class="field-fk">FK</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">memberid</span>
+                        <span class="field-type">INTEGER</span>
+                        <span class="field-fk">FK</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">assignedat</span>
+                        <span class="field-type">TIMESTAMP</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">isactive</span>
+                        <span class="field-type">BOOLEAN</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-title financial-tables">Financial Tables</div>
+
+            <div class="table-card financial-tables">
+                <div class="table-header">
+                    <div class="table-icon">💰</div>
+                    monthlycontributions
+                </div>
+                <div class="table-body">
+                    <div class="field">
+                        <span class="field-name">contributionid</span>
+                        <span class="field-type">SERIAL</span>
+                        <span class="field-key">PK</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">groupid</span>
+                        <span class="field-type">INTEGER</span>
+                        <span class="field-fk">FK</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">memberid</span>
+                        <span class="field-type">INTEGER</span>
+                        <span class="field-fk">FK</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">contributionmonth</span>
+                        <span class="field-type">VARCHAR(20)</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">amountdue</span>
+                        <span class="field-type">DECIMAL(12,2)</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">amountpaid</span>
+                        <span class="field-type">DECIMAL(12,2)</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">status</span>
+                        <span class="field-type">VARCHAR(50)</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">proofofpayment</span>
+                        <span class="field-type">TEXT</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">submittedat</span>
+                        <span class="field-type">TIMESTAMP</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">updatedat</span>
+                        <span class="field-type">TIMESTAMP</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-card financial-tables">
+                <div class="table-header">
+                    <div class="table-icon">✅</div>
+                    contributionapprovals
+                </div>
+                <div class="table-body">
+                    <div class="field">
+                        <span class="field-name">approvalid</span>
+                        <span class="field-type">SERIAL</span>
+                        <span class="field-key">PK</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">contributionid</span>
+                        <span class="field-type">INTEGER</span>
+                        <span class="field-fk">FK</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">signatorymemberid</span>
+                        <span class="field-type">INTEGER</span>
+                        <span class="field-fk">FK</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">decision</span>
+                        <span class="field-type">VARCHAR(50)</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">decisionnote</span>
+                        <span class="field-type">TEXT</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">decidedat</span>
+                        <span class="field-type">TIMESTAMP</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-card financial-tables">
+                <div class="table-header">
+                    <div class="table-icon">💵</div>
+                    loans
+                </div>
+                <div class="table-body">
+                    <div class="field">
+                        <span class="field-name">loanid</span>
+                        <span class="field-type">SERIAL</span>
+                        <span class="field-key">PK</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">groupid</span>
+                        <span class="field-type">INTEGER</span>
+                        <span class="field-fk">FK</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">borrowermemberid</span>
+                        <span class="field-type">INTEGER</span>
+                        <span class="field-fk">FK</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">principalamount</span>
+                        <span class="field-type">DECIMAL(12,2)</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">interestrate</span>
+                        <span class="field-type">DECIMAL(5,4)</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">outstandingbalance</span>
+                        <span class="field-type">DECIMAL(12,2)</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">status</span>
+                        <span class="field-type">VARCHAR(50)</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">purpose</span>
+                        <span class="field-type">TEXT</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">requestedat</span>
+                        <span class="field-type">TIMESTAMP</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">disbursedat</span>
+                        <span class="field-type">TIMESTAMP</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">duedate</span>
+                        <span class="field-type">DATE</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">createdat</span>
+                        <span class="field-type">TIMESTAMP</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">updatedat</span>
+                        <span class="field-type">TIMESTAMP</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-card financial-tables">
+                <div class="table-header">
+                    <div class="table-icon">✔️</div>
+                    loanapprovals
+                </div>
+                <div class="table-body">
+                    <div class="field">
+                        <span class="field-name">loanapprovalid</span>
+                        <span class="field-type">SERIAL</span>
+                        <span class="field-key">PK</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">loanid</span>
+                        <span class="field-type">INTEGER</span>
+                        <span class="field-fk">FK</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">signatorymemberid</span>
+                        <span class="field-type">INTEGER</span>
+                        <span class="field-fk">FK</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">decision</span>
+                        <span class="field-type">VARCHAR(50)</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">decisionnote</span>
+                        <span class="field-type">TEXT</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">decidedat</span>
+                        <span class="field-type">TIMESTAMP</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-card financial-tables">
+                <div class="table-header">
+                    <div class="table-icon">💳</div>
+                    loanrepayments
+                </div>
+                <div class="table-body">
+                    <div class="field">
+                        <span class="field-name">repaymentid</span>
+                        <span class="field-type">SERIAL</span>
+                        <span class="field-key">PK</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">loanid</span>
+                        <span class="field-type">INTEGER</span>
+                        <span class="field-fk">FK</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">memberid</span>
+                        <span class="field-type">INTEGER</span>
+                        <span class="field-fk">FK</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">amountpaid</span>
+                        <span class="field-type">DECIMAL(12,2)</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">repaymentdate</span>
+                        <span class="field-type">DATE</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">status</span>
+                        <span class="field-type">VARCHAR(50)</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">proofofpayment</span>
+                        <span class="field-type">TEXT</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">submittedat</span>
+                        <span class="field-type">TIMESTAMP</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">updatedat</span>
+                        <span class="field-type">TIMESTAMP</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-card financial-tables">
+                <div class="table-header">
+                    <div class="table-icon">🔄</div>
+                    repaymentapprovals
+                </div>
+                <div class="table-body">
+                    <div class="field">
+                        <span class="field-name">repayapprovalid</span>
+                        <span class="field-type">SERIAL</span>
+                        <span class="field-key">PK</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">repaymentid</span>
+                        <span class="field-type">INTEGER</span>
+                        <span class="field-fk">FK</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">signatorymemberid</span>
+                        <span class="field-type">INTEGER</span>
+                        <span class="field-fk">FK</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">decision</span>
+                        <span class="field-type">VARCHAR(50)</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">decisionnote</span>
+                        <span class="field-type">TEXT</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">decidedat</span>
+                        <span class="field-type">TIMESTAMP</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-card financial-tables">
+                <div class="table-header">
+                    <div class="table-icon">📊</div>
+                    loaninterestschedule
+                </div>
+                <div class="table-body">
+                    <div class="field">
+                        <span class="field-name">scheduleid</span>
+                        <span class="field-type">SERIAL</span>
+                        <span class="field-key">PK</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">loanid</span>
+                        <span class="field-type">INTEGER</span>
+                        <span class="field-fk">FK</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">periodmonth</span>
+                        <span class="field-type">DATE</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">openingbalance</span>
+                        <span class="field-type">DECIMAL(12,2)</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">interestcharged</span>
+                        <span class="field-type">DECIMAL(12,2)</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">closingbalance</span>
+                        <span class="field-type">DECIMAL(12,2)</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">isapplied</span>
+                        <span class="field-type">BOOLEAN</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">createdat</span>
+                        <span class="field-type">TIMESTAMP</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-title governance-tables">Governance Tables</div>
+
+            <div class="table-card governance-tables">
+                <div class="table-header">
+                    <div class="table-icon">📝</div>
+                    membershiprequests
+                </div>
+                <div class="table-body">
+                    <div class="field">
+                        <span class="field-name">requestid</span>
+                        <span class="field-type">SERIAL</span>
+                        <span class="field-key">PK</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">groupid</span>
+                        <span class="field-type">INTEGER</span>
+                        <span class="field-fk">FK</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">userid</span>
+                        <span class="field-type">INTEGER</span>
+                        <span class="field-fk">FK</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">message</span>
+                        <span class="field-type">TEXT</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">status</span>
+                        <span class="field-type">VARCHAR(50)</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">requestedat</span>
+                        <span class="field-type">TIMESTAMP</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">reviewedat</span>
+                        <span class="field-type">TIMESTAMP</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">reviewedby</span>
+                        <span class="field-type">INTEGER</span>
+                        <span class="field-fk">FK</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">reviewnote</span>
+                        <span class="field-type">TEXT</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-card governance-tables">
+                <div class="table-header">
+                    <div class="table-icon">🔔</div>
+                    notifications
+                </div>
+                <div class="table-body">
+                    <div class="field">
+                        <span class="field-name">notificationid</span>
+                        <span class="field-type">SERIAL</span>
+                        <span class="field-key">PK</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">userid</span>
+                        <span class="field-type">INTEGER</span>
+                        <span class="field-fk">FK</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">type</span>
+                        <span class="field-type">VARCHAR(50)</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">title</span>
+                        <span class="field-type">VARCHAR(255)</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">message</span>
+                        <span class="field-type">TEXT</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">relatedid</span>
+                        <span class="field-type">INTEGER</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">groupid</span>
+                        <span class="field-type">INTEGER</span>
+                        <span class="field-fk">FK</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">isread</span>
+                        <span class="field-type">BOOLEAN</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">createdat</span>
+                        <span class="field-type">TIMESTAMP</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">readat</span>
+                        <span class="field-type">TIMESTAMP</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-title communication-tables">Communication Tables</div>
+
+            <div class="table-card communication-tables">
+                <div class="table-header">
+                    <div class="table-icon">💬</div>
+                    conversations
+                </div>
+                <div class="table-body">
+                    <div class="field">
+                        <span class="field-name">conversationid</span>
+                        <span class="field-type">SERIAL</span>
+                        <span class="field-key">PK</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">groupid</span>
+                        <span class="field-type">INTEGER</span>
+                        <span class="field-fk">FK</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">createdby</span>
+                        <span class="field-type">INTEGER</span>
+                        <span class="field-fk">FK</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">createdat</span>
+                        <span class="field-type">TIMESTAMP</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-card communication-tables">
+                <div class="table-header">
+                    <div class="table-icon">👥</div>
+                    conversation_members
+                </div>
+                <div class="table-body">
+                    <div class="field">
+                        <span class="field-name">memberid</span>
+                        <span class="field-type">SERIAL</span>
+                        <span class="field-key">PK</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">conversationid</span>
+                        <span class="field-type">INTEGER</span>
+                        <span class="field-fk">FK</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">userid</span>
+                        <span class="field-type">INTEGER</span>
+                        <span class="field-fk">FK</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">joinedat</span>
+                        <span class="field-type">TIMESTAMP</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-card communication-tables">
+                <div class="table-header">
+                    <div class="table-icon">📨</div>
+                    messages
+                </div>
+                <div class="table-body">
+                    <div class="field">
+                        <span class="field-name">messageid</span>
+                        <span class="field-type">SERIAL</span>
+                        <span class="field-key">PK</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">conversationid</span>
+                        <span class="field-type">INTEGER</span>
+                        <span class="field-fk">FK</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">senderid</span>
+                        <span class="field-type">INTEGER</span>
+                        <span class="field-fk">FK</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">content</span>
+                        <span class="field-type">TEXT</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">messagetype</span>
+                        <span class="field-type">VARCHAR(50)</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">createdat</span>
+                        <span class="field-type">TIMESTAMP</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">editedat</span>
+                        <span class="field-type">TIMESTAMP</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-card communication-tables">
+                <div class="table-header">
+                    <div class="table-icon">✅</div>
+                    message_reads
+                </div>
+                <div class="table-body">
+                    <div class="field">
+                        <span class="field-name">readid</span>
+                        <span class="field-type">SERIAL</span>
+                        <span class="field-key">PK</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">messageid</span>
+                        <span class="field-type">INTEGER</span>
+                        <span class="field-fk">FK</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">userid</span>
+                        <span class="field-type">INTEGER</span>
+                        <span class="field-fk">FK</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">readat</span>
+                        <span class="field-type">TIMESTAMP</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
