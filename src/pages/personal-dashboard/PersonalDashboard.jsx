@@ -25,12 +25,21 @@ export default function PersonalDashboard() {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
+      console.log('Fetching dashboard data...');
       const response = await reportsAPI.getDashboard();
-      
+      console.log('Dashboard response:', response);
+
       if (response.success && response.data) {
         setDashboardData(response.data);
-        setSummary(response.data.summary);
+        setSummary(response.data.summary || {
+          totalContributions: 0,
+          totalLoanBalance: 0,
+          totalInterestRaised: 0,
+          borrowingLimit: 0,
+          contributionStatus: { paid: 0, pending: 0, notPaid: 0 }
+        });
       } else {
+        console.error('Dashboard response error:', response);
         toast.error(response.error || 'Failed to load dashboard data');
       }
     } catch (error) {
