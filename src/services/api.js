@@ -119,6 +119,7 @@ export const contributionsAPI = {
   },
   create: (contribution) => apiRequest('/contributions', { method: 'POST', body: JSON.stringify(contribution) }),
   update: (id, contribution) => apiRequest(`/contributions/${id}`, { method: 'PUT', body: JSON.stringify(contribution) }),
+  updateAmount: (id, data) => apiRequest(`/contributions/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   delete: (id) => apiRequest(`/contributions/${id}`, { method: 'DELETE' }),
 };
 

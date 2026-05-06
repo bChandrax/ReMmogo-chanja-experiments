@@ -157,3 +157,65 @@ exports.getMyContributions = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+// SIGNATORY UPDATES MEMBER CONTRIBUTION AMOUNT
+exports.updateContributionAmount = async (req, res) => {
+  const { contributionId } = req.params;
+  const { amountPaid, status } = req.body;
+
+  try {
+    // Get contribution details
+    const contribCheck = await db.query(
+      `SELECT mc.*, gm.groupid FROM monthlycontributions mc
+       INNER JOIN groupmembers gm ON gm.memberid = mc.memberid
+       WHERE mc.contributionid = $1`,
+      [contributionId]
+    );
+
+    if (contribCheck.rows.length === 0) {
+      return res.status(404).json({ error: "Contribution not found" });
+    }
+
+    const groupId = contribCheck.rows[0].groupid;
+
+    // Check if user is signatory of this group
+    const signatoryCheck = await db.query(
+      `SELECT memberid FROM groupmembers
+       WHERE userid = $1 AND groupid = $2 AND role IN ('signatory', 'admin') AND isactive = true`,
+      [req.user.id, groupId]
+    );
+
+    if (signatoryCheck.rows.length === 0) {
+      return res.status(403).json({ error: "Only signatories can update contribution amounts" });
+    }
+
+    // Update contribution
+    const updates = [];
+    const values = [];
+    let paramCount = 1;
+
+    if (amountPaid !== undefined) {
+      updates.push(`amountpaid = $${paramCount}`);
+      values.push(amountPaid);
+      paramCount++;
+    }
+
+    if (status !== undefined) {
+      updates.push(`status = $${paramCount}`);
+      values.push(status);
+      paramCount++;
+    }
+
+    updates.push(`updatedat = NOW()`);
+    values.push(contributionId);
+
+    await db.query(
+      `UPDATE monthlycontributions SET ${updates.join(', ')} WHERE contributionid = $${paramCount}`,
+      values
+    );
+
+    res.json({ message: "Contribution updated successfully" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};

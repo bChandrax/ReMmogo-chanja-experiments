@@ -13,6 +13,8 @@ export default function MyGroups() {
   const [error, setError] = useState(null);
   const [leaveGroup, setLeaveGroup] = useState(null);
   const [leaving, setLeaving] = useState(false);
+  const [deleteGroup, setDeleteGroup] = useState(null);
+  const [deleting, setDeleting] = useState(false);
   const toast = useToast();
 
   useEffect(() => {
@@ -92,6 +94,28 @@ export default function MyGroups() {
       toast.error('Failed to leave group. Please try again.');
     } finally {
       setLeaving(false);
+    }
+  };
+
+  const handleDeleteGroup = async () => {
+    if (!deleteGroup) return;
+
+    try {
+      setDeleting(true);
+
+      const response = await groupsAPI.delete(deleteGroup.groupid);
+
+      if (response.success) {
+        toast.success('Group deleted successfully');
+        setDeleteGroup(null);
+        fetchMyGroups();
+      } else {
+        toast.error(response.error || 'Failed to delete group');
+      }
+    } catch (err) {
+      toast.error('Failed to delete group. Please try again.');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -194,8 +218,17 @@ export default function MyGroups() {
                       <GroupCard {...group} colorIndex={group.colorIndex} />
                     </Link>
                     <div className="mg-card-actions">
-                      <button 
-                        className="mg-leave-btn" 
+                      {group.signatory && (
+                        <button
+                          className="mg-delete-btn"
+                          onClick={(e) => { e.preventDefault(); setDeleteGroup(group); }}
+                          title="Delete this group (admin only)"
+                        >
+                          Delete Group
+                        </button>
+                      )}
+                      <button
+                        className="mg-leave-btn"
                         onClick={(e) => { e.preventDefault(); setLeaveGroup(group); }}
                         disabled={group.role === 'admin' && groups.length === 1}
                         title={group.role === 'admin' && groups.length === 1 ? 'Cannot leave - you are the only admin' : 'Leave this group'}
@@ -254,12 +287,50 @@ export default function MyGroups() {
                 <button className="mg-modal-cancel" onClick={() => setLeaveGroup(null)}>
                   Cancel
                 </button>
-                <button 
-                  className="mg-modal-submit mg-modal-submit--danger" 
+                <button
+                  className="mg-modal-submit mg-modal-submit--danger"
                   onClick={handleLeaveGroup}
                   disabled={leaving}
                 >
                   {leaving ? 'Leaving...' : 'Leave Group'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete group confirmation modal */}
+      {deleteGroup && (
+        <div className="mg-modal-overlay" onClick={() => setDeleteGroup(null)}>
+          <div className="mg-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="mg-modal-header">
+              <span>Delete Group</span>
+              <button className="mg-modal-close" onClick={() => setDeleteGroup(null)}>✕</button>
+            </div>
+            <div className="mg-modal-body">
+              <div className="mg-modal-group-name">{deleteGroup.groupName}</div>
+              <p className="mg-modal-note">
+                Are you sure you want to delete this group? This will:
+              </p>
+              <ul className="mg-modal-list">
+                <li>Mark the group as inactive</li>
+                <li>Remove all members from the group</li>
+                <li>Cancel all pending contributions and loans</li>
+              </ul>
+              <p className="mg-modal-warning">
+                ⚠️ This action cannot be undone. All group data will be lost.
+              </p>
+              <div className="mg-modal-actions">
+                <button className="mg-modal-cancel" onClick={() => setDeleteGroup(null)}>
+                  Cancel
+                </button>
+                <button
+                  className="mg-modal-submit mg-modal-submit--danger"
+                  onClick={handleDeleteGroup}
+                  disabled={deleting}
+                >
+                  {deleting ? 'Deleting...' : 'Delete Group'}
                 </button>
               </div>
             </div>

@@ -168,6 +168,24 @@ body {
   cursor: not-allowed;
 }
 
+.mg-delete-btn {
+  padding: 6px 14px;
+  background: #c0392b;
+  color: #fff;
+  border: 1px solid #c0392b;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-right: 8px;
+}
+
+.mg-delete-btn:hover {
+  background: #a93226;
+  border-color: #a93226;
+}
+
 .groups-list a {
   text-decoration: none;
   color: inherit;
@@ -491,4 +509,16 @@ body {
 
 .mg-modal-submit--danger:hover:not(:disabled) {
   background: #a93226;
+}
+
+.mg-modal-list {
+  margin: 12px 0;
+  padding-left: 20px;
+  font-size: 11px;
+  color: #666;
+  line-height: 1.6;
+}
+
+.mg-modal-list li {
+  margin-bottom: 6px;
 }

@@ -148,3 +148,36 @@ exports.applyMonthlyInterest = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+// DELETE GROUP (admin only)
+exports.deleteGroup = async (req, res) => {
+  const { groupId } = req.params;
+
+  try {
+    // Check if user is admin of the group
+    const adminCheck = await db.query(
+      `SELECT memberid FROM groupmembers
+       WHERE groupid = $1 AND userid = $2 AND role = 'admin' AND isactive = true`,
+      [groupId, req.user.id]
+    );
+    if (adminCheck.rows.length === 0) {
+      return res.status(403).json({ error: "Only group admins can delete the group" });
+    }
+
+    // Soft delete - mark group as inactive
+    await db.query(
+      `UPDATE motshelogroups SET isactive = false, updatedat = NOW() WHERE groupid = $1`,
+      [groupId]
+    );
+
+    // Mark all members as inactive
+    await db.query(
+      `UPDATE groupmembers SET isactive = false WHERE groupid = $1`,
+      [groupId]
+    );
+
+    res.json({ message: "Group deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
