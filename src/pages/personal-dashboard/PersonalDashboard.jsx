@@ -17,6 +17,7 @@ export default function PersonalDashboard() {
     totalInterestRaised: 0,
     borrowingLimit: 0,
   });
+  
   const [groups, setGroups] = useState([]);
   const [contributions, setContributions] = useState([]);
   const [loans, setLoans] = useState([]);
