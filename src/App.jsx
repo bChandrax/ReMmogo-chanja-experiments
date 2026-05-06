@@ -11,7 +11,6 @@ import MyContributions from "./pages/myContributions/myContributions";
 import MyLoans from "./pages/myLoans/myLoans";
 import CreateGroup from "./pages/CreateGroup/Creategroup";
 import GroupDashboard from "./pages/group-dashboard/groupDashboard";
-import MessagesPage from "./pages/messages/MessagesPage";
 import SettingsPage from "./pages/settings/SettingsPage";
 import SupportPage from "./pages/support/SupportPage";
 import PageTransition from "./components/pageTransition/pgTrans";
@@ -46,9 +45,6 @@ function App() {
           } />
           <Route path="/GrpDash" element={
             <ProtectedRoute><GroupDashboard /></ProtectedRoute>
-          } />
-          <Route path="/messages" element={
-            <ProtectedRoute><MessagesPage /></ProtectedRoute>
           } />
           <Route path="/settings" element={
             <ProtectedRoute><SettingsPage /></ProtectedRoute>

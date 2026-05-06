@@ -1,4 +1,4 @@
-import { Handshake, Settings, Info, Home, GroupIcon, MessageCircle, Banknote, Coins, LogOut } from "lucide-react";
+import { Handshake, Settings, Info, Home, GroupIcon, Banknote, Coins, LogOut } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import "./sideBar.css";
@@ -29,7 +29,6 @@ export default function SideBar() {
         <Link to="/myGroups"         className={`nav-item ${location.pathname === "/my-groups"         ? "nav-item-active" : ""}`}><GroupIcon size={18} /><p>My Groups</p></Link>
         <Link to="/myContributions"  className={`nav-item ${location.pathname === "/my-contributions"  ? "nav-item-active" : ""}`}><Coins size={18} /> <p>My Contributions</p></Link>
         <Link to="/myLoans"          className={`nav-item ${location.pathname === "/my-loans"          ? "nav-item-active" : ""}`}><Banknote size={18} /> <p>My Loans</p></Link>
-        <Link to="/messages"    className={`nav-item ${location.pathname === "/messages"     ? "nav-item-active" : ""}`}><MessageCircle size={18} /> <p>Messages</p></Link>
 
         <div className="nav-divider" />
 
